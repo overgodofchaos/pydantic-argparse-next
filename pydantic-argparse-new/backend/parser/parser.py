@@ -65,12 +65,17 @@ class Extra(BaseModel):
     #     return obj.model_dump()
 
 
-def parse(model: Type[BaseModel]) -> BaseModel:
-    parser = ArgumentParser(
-        prog="Program name",
-        description="Program description",
-        epilog="Program epilog"
-    )
+def parse(model: Type[BaseModel] | BaseModel, parser_=None) -> BaseModel:
+    if parser_ is None:
+        parser = ArgumentParser(
+            prog="Program name",
+            description="Program description",
+            epilog="Program epilog"
+        )
+    else:
+        parser = parser_
+
+    subparsers = None
 
     fields = model.model_fields
 
@@ -78,6 +83,16 @@ def parse(model: Type[BaseModel]) -> BaseModel:
 
     for field in fields.keys():
         field_info = fields[field]
+
+        if issubclass(field_info.annotation, BaseModel):
+            if subparsers is None:
+                subparsers = parser.add_subparsers()
+            subparser = subparsers.add_parser(field)
+            parse(field_info.annotation, subparser)
+            continue
+
+
+
         argument = Argument()
 
         argument.name = field.replace("_", "-")
@@ -132,8 +147,7 @@ def parse(model: Type[BaseModel]) -> BaseModel:
             else:
                 raise IOError("Default must be configured for bool arguments")
 
-
-
+    print(arguments)
     for argument in arguments:
         print(argument)
         parser.add_argument(
@@ -141,6 +155,7 @@ def parse(model: Type[BaseModel]) -> BaseModel:
             **argument.parametres()
         )
 
-    args = parser.parse_args()
-    return model.model_validate(args.__dict__)
+    if parser_ is None:
+        args = parser.parse_args()
+        return model.model_validate(args.__dict__)
 
