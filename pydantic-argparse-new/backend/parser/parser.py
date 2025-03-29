@@ -32,6 +32,9 @@ class Argument(BaseModel):
             "alias"
         }
 
+        if self.default is not None:
+            self.required = False
+
         if self.positional:
             exclude.add("required")
 
@@ -87,6 +90,8 @@ def parse(model: Type[BaseModel]) -> BaseModel:
             argument.default = field_info.default
 
         argument.type = field_info.annotation
+        if str(argument.type).find("Optional") != -1:
+            argument.type = get_args(field_info.annotation)[0]
 
         argument.help = field_info.description
 
@@ -106,7 +111,7 @@ def parse(model: Type[BaseModel]) -> BaseModel:
         else:
             argument.positional = True
 
-        if get_origin(field_info.annotation) is not None:
+        if get_origin(argument.type) is not None:
             print(get_origin(field_info.annotation))
             if get_origin(field_info.annotation) is list:
                 argument.type = get_args(field_info.annotation)[0]
@@ -115,7 +120,7 @@ def parse(model: Type[BaseModel]) -> BaseModel:
                     argument.nargs = "*"
                 else:
                     argument.nargs = len(get_args(field_info.annotation))
-            if get_origin(field_info.annotation) is typing.Literal:
+            if str(argument.type).find("Literal") != -1:
                 argument.type = str
                 argument.choices = list(get_args(field_info.annotation))
 
