@@ -84,14 +84,17 @@ def parse(model: Type[BaseModel] | BaseModel, parser_=None) -> BaseModel:
     for field in fields.keys():
         field_info = fields[field]
 
-        if issubclass(field_info.annotation, BaseModel):
+        if str(field_info.annotation).find("Optional") != -1:
+            type_ = get_args(field_info.annotation)[0]
+        else:
+            type_ = field_info.annotation
+
+        if issubclass(type_, BaseModel):
             if subparsers is None:
                 subparsers = parser.add_subparsers()
             subparser = subparsers.add_parser(field)
-            parse(field_info.annotation, subparser)
+            parse(type_, subparser)
             continue
-
-
 
         argument = Argument()
 
@@ -104,9 +107,7 @@ def parse(model: Type[BaseModel] | BaseModel, parser_=None) -> BaseModel:
             argument.required = False
             argument.default = field_info.default
 
-        argument.type = field_info.annotation
-        if str(argument.type).find("Optional") != -1:
-            argument.type = get_args(field_info.annotation)[0]
+        argument.type = type_
 
         argument.help = field_info.description
 
