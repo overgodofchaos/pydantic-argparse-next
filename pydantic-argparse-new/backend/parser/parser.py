@@ -1,4 +1,4 @@
-from argparse import ArgumentParser
+from argparse import ArgumentParser, Namespace
 from pydantic import BaseModel, Field
 from typing import Type, Any, get_args, get_origin, Literal
 import typing
@@ -65,7 +65,23 @@ class Extra(BaseModel):
     #     return obj.model_dump()
 
 
-def parse(model: Type[BaseModel] | BaseModel, parser_=None) -> BaseModel:
+def resolve_schema(args: Namespace, schema: dict, depth: int = 0):
+    keys = list(schema.keys()).copy()
+    for key in keys:
+        if key in args:
+            schema[key] = getattr(args, key)
+        else:
+            if isinstance(schema[key], dict):
+                if key in getattr(args, f"pydantic-argparser-new_subcommand_depth_{depth}"):
+                    schema[key] = resolve_schema(args, schema[key], depth + 1)
+                else:
+                    schema[key] = None
+            else:
+                del schema[key]
+    return schema
+
+
+def parse(model: Type[BaseModel] | BaseModel, parser_=None, schema_: dict = None, depth: int = 0) -> BaseModel | None:
     if parser_ is None:
         parser = ArgumentParser(
             prog="Program name",
@@ -75,6 +91,11 @@ def parse(model: Type[BaseModel] | BaseModel, parser_=None) -> BaseModel:
     else:
         parser = parser_
 
+    if schema_ is None:
+        schema = dict()
+    else:
+        schema = schema_
+
     subparsers = None
 
     fields = model.model_fields
@@ -82,6 +103,7 @@ def parse(model: Type[BaseModel] | BaseModel, parser_=None) -> BaseModel:
     arguments = []
 
     for field in fields.keys():
+        schema[field] = None
         field_info = fields[field]
 
         if str(field_info.annotation).find("Optional") != -1:
@@ -91,9 +113,15 @@ def parse(model: Type[BaseModel] | BaseModel, parser_=None) -> BaseModel:
 
         if issubclass(type_, BaseModel):
             if subparsers is None:
-                subparsers = parser.add_subparsers()
+                subparsers = parser.add_subparsers(dest=f"pydantic-argparser-new_subcommand_depth_{depth}")
             subparser = subparsers.add_parser(field)
-            parse(type_, subparser)
+            schema[field] = dict()
+            parse(
+                type_,
+                subparser,
+                schema[field],
+                depth + 1
+            )
             continue
 
         argument = Argument()
@@ -128,7 +156,7 @@ def parse(model: Type[BaseModel] | BaseModel, parser_=None) -> BaseModel:
             argument.positional = True
 
         if get_origin(argument.type) is not None:
-            print(get_origin(field_info.annotation))
+            # print(get_origin(field_info.annotation))
             if get_origin(field_info.annotation) is list:
                 argument.type = get_args(field_info.annotation)[0]
 
@@ -148,15 +176,17 @@ def parse(model: Type[BaseModel] | BaseModel, parser_=None) -> BaseModel:
             else:
                 raise IOError("Default must be configured for bool arguments")
 
-    print(arguments)
+    # print(arguments)
     for argument in arguments:
-        print(argument)
+        # print(argument)
         parser.add_argument(
             *argument.names,
             **argument.parametres()
         )
 
     if parser_ is None:
+
         args = parser.parse_args()
-        return model.model_validate(args.__dict__)
+        resolved_schema = resolve_schema(args, schema)
+        return model.model_validate(resolved_schema)
 
