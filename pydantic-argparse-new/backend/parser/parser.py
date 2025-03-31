@@ -36,7 +36,7 @@ def parse(model: Type[BaseModel] | BaseModel, parser_=None, schema_: dict = None
 
         if issubclass(type_, BaseModel):
             if subparsers is None:
-                subparsers = parser.add_subparsers(dest=f"pydantic-argparser-new_subcommand_depth_{depth}")
+                subparsers = parser.add_subparsers(dest=f"pydantic-argparser-new_subcommand_depth_{depth}", required=False)
 
             params = get_parserconfig(type_)
 
