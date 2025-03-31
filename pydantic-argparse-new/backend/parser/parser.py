@@ -2,92 +2,15 @@ from argparse import ArgumentParser, Namespace
 from pydantic import BaseModel, Field
 from typing import Type, Any, get_args, get_origin, Literal
 import typing
-
-
-class Argument(BaseModel):
-    name: str = None
-    alias: str | None = None
-    required: bool | None = False
-    positional: bool = False
-    help: str | None = None
-    type: Any = None
-    default: Any = None
-    nargs: int | str | None = None
-    action: str | None = None
-    choices: list[str] | None = None
-
-    class Config:
-        validate_assignment = True
-
-    @property
-    def names(self) -> list[str]:
-        if self.alias:
-            return [self.name, self.alias]
-        return [self.name]
-
-    def parametres(self):
-        exclude = {
-            "positional",
-            "name",
-            "alias"
-        }
-
-        if self.default is not None:
-            self.required = False
-
-        if self.positional:
-            exclude.add("required")
-
-            if self.required is False:
-                self.nargs = "?"
-
-        if self.action in ["store_true", "store_false"]:
-            exclude.add("type")
-            exclude.add("nargs")
-
-        for key, value in self.model_dump().items():
-            if value is None:
-                exclude.add(key)
-
-        params = self.model_dump(exclude=exclude)
-        return params
-
-
-class Extra(BaseModel):
-    positional: bool = False
-
-    class Config:
-        validate_assignment = True
-
-    # def __new__(cls, *args, **kwargs) -> dict:
-    #     obj = super().__new__(cls, *args, **kwargs)
-    #     obj.__init__()
-    #     return obj.model_dump()
-
-
-def resolve_schema(args: Namespace, schema: dict, depth: int = 0):
-    keys = list(schema.keys()).copy()
-    for key in keys:
-        if key in args:
-            schema[key] = getattr(args, key)
-        else:
-            if isinstance(schema[key], dict):
-                if key in getattr(args, f"pydantic-argparser-new_subcommand_depth_{depth}"):
-                    schema[key] = resolve_schema(args, schema[key], depth + 1)
-                else:
-                    schema[key] = None
-            else:
-                del schema[key]
-    return schema
+from .classes import Extra, Argument, ParserConfig, PydanticArgparseError
+from .utils import resolve_schema, get_parserconfig
 
 
 def parse(model: Type[BaseModel] | BaseModel, parser_=None, schema_: dict = None, depth: int = 0) -> BaseModel | None:
     if parser_ is None:
-        parser = ArgumentParser(
-            prog="Program name",
-            description="Program description",
-            epilog="Program epilog"
-        )
+        params = get_parserconfig(model)
+
+        parser = ArgumentParser(**params)
     else:
         parser = parser_
 
@@ -114,7 +37,10 @@ def parse(model: Type[BaseModel] | BaseModel, parser_=None, schema_: dict = None
         if issubclass(type_, BaseModel):
             if subparsers is None:
                 subparsers = parser.add_subparsers(dest=f"pydantic-argparser-new_subcommand_depth_{depth}")
-            subparser = subparsers.add_parser(field)
+
+            params = get_parserconfig(type_)
+
+            subparser = subparsers.add_parser(field, **params)
             schema[field] = dict()
             parse(
                 type_,
@@ -126,10 +52,10 @@ def parse(model: Type[BaseModel] | BaseModel, parser_=None, schema_: dict = None
 
         argument = Argument()
 
-        argument.name = field.replace("_", "-")
+        argument.name = field
 
         if field_info.alias:
-            argument.alias = field_info.alias.replace("_", "-")
+            argument.alias = field_info.alias
 
         if field_info.default is not None:
             argument.required = False
@@ -148,10 +74,6 @@ def parse(model: Type[BaseModel] | BaseModel, parser_=None, schema_: dict = None
 
         if extra.positional is False:
             argument.positional = False
-            argument.name = f"--{argument.name}"
-            if argument.alias is not None:
-                if argument.alias.startswith("-") is False:
-                    argument.alias = f"--{argument.alias}"
         else:
             argument.positional = True
 
