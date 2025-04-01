@@ -96,8 +96,8 @@ class Argument(BaseModelArgsParser):
         if self.positional:
             exclude.add("required")
 
-            if self.required is False:
-                self.nargs = "?"
+            # if self.required is False:
+            #     self.nargs = "?"
 
         if self.action in ["store_true", "store_false"]:
             exclude.add("type")
