@@ -1,5 +1,5 @@
 from argparse import Namespace
-from .classes import ParserConfig, PydanticArgparseError
+from .classes import ParserConfig, PydanticArgparseError, SubparserConfig
 from typing import Type
 from pydantic import BaseModel
 
@@ -21,7 +21,7 @@ def resolve_schema(args: Namespace, schema: dict, depth: int = 0):
     return schema
 
 
-def get_parserconfig(model: ParserConfig | Type[BaseModel]) -> dict:
+def get_parserconfig(model: BaseModel| Type[BaseModel]) -> dict:
     if hasattr(model, '__parserconfig__'):
         # print(model.__parserconfig__)
         if isinstance(model.__parserconfig__, ParserConfig) is False:
@@ -30,4 +30,14 @@ def get_parserconfig(model: ParserConfig | Type[BaseModel]) -> dict:
     else:
         parsms = {}
 
+    return parsms
+
+
+def get_subparserconfig(model: BaseModel | Type[BaseModel]) -> dict:
+    if hasattr(model, '__subparserconfig__'):
+        if isinstance(model.__subparserconfig__, SubparserConfig) is False:
+            raise PydanticArgparseError("__subparserconfig__ must be an instance of SubparserConfig")
+        parsms = model.__subparserconfig__.model_dump()
+    else:
+        parsms = {}
     return parsms

@@ -1,9 +1,10 @@
 from argparse import ArgumentParser, Namespace
 from pydantic import BaseModel, Field
+from pydantic_core import PydanticUndefined
 from typing import Type, Any, get_args, get_origin, Literal
 import typing
 from .classes import Extra, Argument, ParserConfig, PydanticArgparseError
-from .utils import resolve_schema, get_parserconfig
+from .utils import resolve_schema, get_parserconfig, get_subparserconfig
 
 
 def parse(model: Type[BaseModel] | BaseModel, parser_=None, schema_: dict = None, depth: int = 0) -> BaseModel | None:
@@ -25,7 +26,10 @@ def parse(model: Type[BaseModel] | BaseModel, parser_=None, schema_: dict = None
 
     arguments = []
 
+    commands = []
+
     for field in fields.keys():
+        # print(field)
         schema[field] = None
         field_info = fields[field]
 
@@ -35,19 +39,7 @@ def parse(model: Type[BaseModel] | BaseModel, parser_=None, schema_: dict = None
             type_ = field_info.annotation
 
         if issubclass(type_, BaseModel):
-            if subparsers is None:
-                subparsers = parser.add_subparsers(dest=f"pydantic-argparser-new_subcommand_depth_{depth}", required=False)
-
-            params = get_parserconfig(type_)
-
-            subparser = subparsers.add_parser(field, **params)
-            schema[field] = dict()
-            parse(
-                type_,
-                subparser,
-                schema[field],
-                depth + 1
-            )
+            commands.append((model, field, type_))
             continue
 
         argument = Argument()
@@ -57,9 +49,10 @@ def parse(model: Type[BaseModel] | BaseModel, parser_=None, schema_: dict = None
         if field_info.alias:
             argument.alias = field_info.alias
 
-        if field_info.default is not None:
-            argument.required = False
-            argument.default = field_info.default
+        # if (field_info.default is not None and
+        #         field_info.default is not PydanticUndefined):
+        #     argument.required = False
+        argument.default = field_info.default
 
         argument.type = type_
 
@@ -106,9 +99,28 @@ def parse(model: Type[BaseModel] | BaseModel, parser_=None, schema_: dict = None
             **argument.parametres()
         )
 
-    if parser_ is None:
+    for command in commands:
+        model, field, type_ = command
 
+        if subparsers is None:
+            subparserconfig = get_subparserconfig(model)
+            # print(subparserconfig)
+            subparsers = parser.add_subparsers(dest=f"pydantic-argparser-new_subcommand_depth_{depth}",
+                                               **subparserconfig)
+
+        params = get_parserconfig(type_)
+
+        subparser = subparsers.add_parser(field, **params)
+        schema[field] = dict()
+        parse(
+            type_,
+            subparser,
+            schema[field],
+            depth + 1
+        )
+
+    if parser_ is None:
         args = parser.parse_args()
+        print(args)
         resolved_schema = resolve_schema(args, schema)
         return model.model_validate(resolved_schema)
-
