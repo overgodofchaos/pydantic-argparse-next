@@ -6,12 +6,13 @@ from typing import Type, Any, get_args, get_origin, Literal
 import typing
 from .classes import ExtraInfoArgument, ExtraInfoOption, ExtraInfoSubcommand
 from .classes import Argument, Option, Subcommand, Parser
+import sys
 
 
 def parse(model: Type[BaseModel] | BaseModel, parser_=None, schema_: dict = None, depth: int = 0) -> BaseModel | None:
     model_fields = model.model_fields
 
-    parser = Parser()
+    parser = Parser(model=model)
 
     for field in model_fields.keys():
         field_info: FieldInfo = model_fields[field]
@@ -52,6 +53,13 @@ def parse(model: Type[BaseModel] | BaseModel, parser_=None, schema_: dict = None
             parser.subcommands.append(subcommand)
 
     print(parser)
+
+    args = sys.argv
+    print(args)
+
+    args_model = parser.resolve(args[1:])
+
+    print(args_model)
 
 
 

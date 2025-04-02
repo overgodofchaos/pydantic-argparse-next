@@ -1,9 +1,9 @@
+import pydantic
 from pydantic import BaseModel
 from pydantic_core import PydanticUndefined
-from typing import Any
+from typing import Any, Type
 from typing import Literal
-
-
+from .utils import find_any
 
 
 
@@ -69,7 +69,7 @@ def parserconfig(
                         allow_abbrev=allow_abbrev, exit_on_error=exit_on_error)
 
 
-class PydanticArgparseError(Exception):
+class PydanticArgparserError(Exception):
     pass
 
 
@@ -87,6 +87,22 @@ class Argument(ArgumentBase):
 class Option(ArgumentBase):
     alias: str | None = None
 
+    @property
+    def options_names(self):
+        names = []
+
+        name = self.attribute_name.replace("_", "-")
+        names.append(f"--{name}")
+
+        if self.alias is not None:
+            alias = self.alias.replace("_", "-")
+            if alias.startswith("-"):
+                names.append(f"{alias}")
+            else:
+                names.append(f"--{alias}")
+
+        return names
+
 
 class Subcommand(BaseModel):
     attribute_name: str
@@ -98,5 +114,36 @@ class Parser(BaseModel):
     arguments: list[Argument] = []
     options: list[Option] = []
     subcommands: list[Subcommand] = []
+    model: Type[pydantic.BaseModel]
+
+    def resolve(self, args: list[str]) -> BaseModel:
+        schema = {}
+
+        for argument in self.arguments:
+            if args[0].startswith("-") is False:
+                schema[argument.attribute_name] = args[0]
+                args.pop(0)
+            else:
+                if argument.required:
+                    raise PydanticArgparserError(f"Argument {argument.attribute_name} is required")
+                else:
+                    schema[argument.attribute_name] = argument.default
+
+        if args[0].startswith("-") is False:
+            raise PydanticArgparserError(f"Argument {args[0]} is not defined")
+
+        for option in self.options:
+            option_position = find_any(args, option.options_names)
+
+            if option_position == -1:
+                if option.required:
+                    raise PydanticArgparserError(f"Option --{option.options_names[0]} is required")
+                else:
+                    schema[option.attribute_name] = option.default
+                    continue
+            else:
+                schema[option.attribute_name] = args[option_position + 1]
+
+        return self.model(**schema)
 
 

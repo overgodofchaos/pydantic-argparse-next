@@ -1,5 +1,4 @@
 from argparse import Namespace
-from .classes import ParserConfig, PydanticArgparseError, SubparserConfig
 from typing import Type
 from pydantic import BaseModel
 
@@ -25,7 +24,7 @@ def get_parserconfig(model: BaseModel| Type[BaseModel]) -> dict:
     if hasattr(model, '__parserconfig__'):
         # print(model.__parserconfig__)
         if isinstance(model.__parserconfig__, ParserConfig) is False:
-            raise PydanticArgparseError("__parserconfig__ must be an instance of ParserConfig")
+            raise PydanticArgparserError("__parserconfig__ must be an instance of ParserConfig")
         parsms = model.__parserconfig__.model_dump()
     else:
         parsms = {}
@@ -36,8 +35,16 @@ def get_parserconfig(model: BaseModel| Type[BaseModel]) -> dict:
 def get_subparserconfig(model: BaseModel | Type[BaseModel]) -> dict:
     if hasattr(model, '__subparserconfig__'):
         if isinstance(model.__subparserconfig__, SubparserConfig) is False:
-            raise PydanticArgparseError("__subparserconfig__ must be an instance of SubparserConfig")
+            raise PydanticArgparserError("__subparserconfig__ must be an instance of SubparserConfig")
         parsms = model.__subparserconfig__.model_dump()
     else:
         parsms = {}
     return parsms
+
+
+def find_any(lst: list[str], items: list[str]) -> int:
+    for i in range(len(lst)):
+        value = lst[i]
+        if value in items:
+            return i
+    return -1
