@@ -2,9 +2,9 @@ import pydantic
 from pydantic import BaseModel
 from pydantic_core import PydanticUndefined
 from typing import Any, Type
+# noinspection PyUnresolvedReferences
 from typing import Literal
 from .utils import find_any
-
 
 
 # noinspection PyRedeclaration
@@ -14,11 +14,11 @@ class BaseModel(BaseModel):
 
 
 class ExtraInfoArgument(BaseModel):
-    required: bool = True
+    pass
 
 
-class ExtraInfoOption(BaseModel):
-    required: bool = True
+class ExtraInfoKeywordArgument(BaseModel):
+    pass
 
 
 class ExtraInfoSubcommand(BaseModel):
@@ -44,6 +44,7 @@ class SubparserConfig(BaseModel):
     help: str | None = None
 
 
+# noinspection PyShadowingBuiltins
 def subparserconfig(
         title: str | None = None,
         description: str | None = None,
@@ -77,14 +78,22 @@ class ArgumentBase(BaseModel):
     attribute_name: str
     description: str | None = None
     required: bool = True
-    default: Any | None = None
+    default: Any = PydanticUndefined
+
+    def model_post_init(self, context: Any) -> None:
+        print("MODEL POST INIT")
+        print(self)
+        if self.default is not PydanticUndefined:
+            self.required = False
+        else:
+            self.required = True
 
 
 class Argument(ArgumentBase):
     pass
 
 
-class Option(ArgumentBase):
+class KeywordArgument(ArgumentBase):
     alias: str | None = None
 
     @property
@@ -112,7 +121,7 @@ class Subcommand(BaseModel):
 
 class Parser(BaseModel):
     arguments: list[Argument] = []
-    options: list[Option] = []
+    options: list[KeywordArgument] = []
     subcommands: list[Subcommand] = []
     model: Type[pydantic.BaseModel]
 
@@ -126,10 +135,8 @@ class Parser(BaseModel):
             else:
                 if argument.required:
                     raise PydanticArgparserError(f"Argument {argument.attribute_name} is required")
-                else:
-                    schema[argument.attribute_name] = argument.default
 
-        if args[0].startswith("-") is False:
+        if len(args) > 0 and args[0].startswith("-") is False:
             raise PydanticArgparserError(f"Argument {args[0]} is not defined")
 
         for option in self.options:
@@ -137,13 +144,10 @@ class Parser(BaseModel):
 
             if option_position == -1:
                 if option.required:
-                    raise PydanticArgparserError(f"Option --{option.options_names[0]} is required")
+                    raise PydanticArgparserError(f"Option {option.options_names[0]} is required")
                 else:
-                    schema[option.attribute_name] = option.default
                     continue
             else:
                 schema[option.attribute_name] = args[option_position + 1]
 
         return self.model(**schema)
-
-

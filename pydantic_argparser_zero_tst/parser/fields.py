@@ -8,11 +8,11 @@ from pydantic.fields import Callable, AliasPath, AliasChoices, PydanticUndefined
 from pydantic.fields import JsonDict, Literal, Unpack, _EmptyKwargs
 import typing
 import annotated_types
-from .classes import ExtraInfoArgument, ExtraInfoOption, ExtraInfoSubcommand
+from .classes import ExtraInfoArgument, ExtraInfoKeywordArgument, ExtraInfoSubcommand
 
 
 # noinspection PyPep8Naming,PyShadowingBuiltins
-def Argument(
+def Arg(
         default: Any = PydanticUndefined,
         *args,
         required: bool = True,
@@ -98,7 +98,7 @@ def Argument(
 
 
 # noinspection PyPep8Naming,PyShadowingBuiltins
-def Option(
+def KwArg(
         default: Any = PydanticUndefined,
         *args,
         required: bool = True,
@@ -138,7 +138,7 @@ def Option(
         fail_fast: bool | None = _Unset,
         **extra: Unpack[_EmptyKwargs],
 ) -> Any:
-    extra_info = ExtraInfoOption(
+    extra_info = ExtraInfoKeywordArgument(
         required=required,
     )
 

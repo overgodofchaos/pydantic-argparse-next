@@ -4,8 +4,8 @@ from pydantic_core import PydanticUndefined
 from pydantic.fields import FieldInfo
 from typing import Type, Any, get_args, get_origin, Literal
 import typing
-from .classes import ExtraInfoArgument, ExtraInfoOption, ExtraInfoSubcommand
-from .classes import Argument, Option, Subcommand, Parser
+from .classes import ExtraInfoArgument, ExtraInfoSubcommand, ExtraInfoKeywordArgument
+from .classes import Argument, KeywordArgument, Subcommand, Parser
 import sys
 
 
@@ -33,8 +33,8 @@ def parse(model: Type[BaseModel] | BaseModel, parser_=None, schema_: dict = None
             )
             parser.arguments.append(argument)
 
-        if isinstance(extra_info, ExtraInfoOption):
-            option = Option(
+        if isinstance(extra_info, ExtraInfoKeywordArgument):
+            option = KeywordArgument(
                 attribute_name=attribute_name,
                 alias=field_info.alias,
                 description=field_info.description,
