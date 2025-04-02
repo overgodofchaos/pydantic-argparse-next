@@ -5,6 +5,11 @@ from typing import Any, Type
 # noinspection PyUnresolvedReferences
 from typing import Literal
 from .utils import find_any
+from rich.console import Console
+from rich.panel import Panel
+from rich.table import Table, box
+from rich.style import Style
+import sys
 
 
 # noinspection PyRedeclaration
@@ -119,6 +124,9 @@ class Subcommand(BaseModel):
 
 
 class Parser(BaseModel):
+    program_name: str = "Default program name"
+    program_description: str = "Default program description"
+
     required_arguments: list[Argument] = []
     optional_arguments: list[Argument] = []
     required_keyword_arguments: list[KeywordArgument] = []
@@ -126,8 +134,131 @@ class Parser(BaseModel):
     subcommands: list[Subcommand] = []
     model: Type[pydantic.BaseModel]
 
+    def help(self):
+        console = Console()
+
+        program = Panel(
+            self.program_description,
+            title_align="left",
+            title=self.program_name,
+            border_style="bold yellow"
+        )
+
+        console.print(program)
+
+        if len(self.required_arguments) > 0:
+            arguments_table = Table(show_header=False, box=None)
+
+            for argument in self.required_arguments:
+                if argument.alias:
+                    alias = f"({argument.alias})"
+                else:
+                    alias = ""
+
+                arguments_table.add_row(
+                    argument.attribute_name,
+                    alias,
+                    argument.description
+                )
+            arguments_panel = Panel(
+                arguments_table,
+                title_align="left",
+                title="Required positional arguments",
+                border_style="bold blue"
+            )
+
+            console.print(arguments_panel)
+
+        if len(self.optional_arguments) > 0:
+            arguments_table = Table(show_header=False, box=None)
+            for argument in self.optional_arguments:
+
+                default = f"[Default: {str(argument.default)}]"
+                if argument.alias:
+                    alias = f"({argument.alias})"
+                else:
+                    alias = ""
+
+                arguments_table.add_row(
+                    argument.attribute_name,
+                    alias,
+                    argument.description,
+                    default
+                )
+            arguments_panel = Panel(
+                arguments_table,
+                title_align="left",
+                title="Optional positional arguments",
+                border_style="bold blue"
+            )
+
+            console.print(arguments_panel)
+
+        if len(self.required_keyword_arguments) > 0:
+            arguments_table = Table(show_header=False, box=None)
+            for argument in self.required_keyword_arguments:
+                names = argument.keyword_arguments_names
+                name = names[0]
+
+                if len(names) > 1:
+                    alias = f"({names[1]})"
+                else:
+                    alias = ""
+
+                arguments_table.add_row(
+                    name,
+                    alias,
+                    argument.description
+                )
+            arguments_panel = Panel(
+                arguments_table,
+                title_align="left",
+                title="Required keyword arguments",
+                border_style="bold blue"
+            )
+
+            console.print(arguments_panel)
+
+        if len(self.optional_keyword_arguments) > 0:
+            arguments_table = Table(show_header=False, box=None)
+            for argument in self.optional_keyword_arguments:
+                names = argument.keyword_arguments_names
+                name = names[0]
+
+                default = f"[Default: {str(argument.default)}]"
+
+                if len(names) > 1:
+                    alias = f"({names[1]})"
+                else:
+                    alias = ""
+
+                arguments_table.add_row(
+                    name,
+                    alias,
+                    argument.description,
+                    default
+                )
+            arguments_panel = Panel(
+                arguments_table,
+                title_align="left",
+                title="Optional keyword arguments",
+                border_style="bold blue"
+            )
+
+            console.print(arguments_panel)
+
+
+
+
+        sys.exit(0)
+
+
     def resolve(self, args: list[str]) -> BaseModel:
         schema = {}
+
+        # Help
+        if find_any(args, ["--help", "-H"]) != -1:
+            self.help()
 
         # Required positional arguments
         for argument in self.required_arguments:
