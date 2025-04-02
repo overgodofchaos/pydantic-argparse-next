@@ -27,39 +27,53 @@ def parse(model: Type[BaseModel] | BaseModel, parser_=None, schema_: dict = None
         if isinstance(extra_info, ExtraInfoArgument):
             argument = Argument(
                 attribute_name=attribute_name,
+                alias=field_info.alias,
                 description=field_info.description,
                 default=field_info.default,
                 **extra_info.model_dump()
             )
-            parser.arguments.append(argument)
+            if argument.required:
+                parser.required_arguments.append(argument)
+            else:
+                parser.optional_arguments.append(argument)
 
         if isinstance(extra_info, ExtraInfoKeywordArgument):
-            option = KeywordArgument(
+            argument = KeywordArgument(
                 attribute_name=attribute_name,
                 alias=field_info.alias,
                 description=field_info.description,
                 default=field_info.default,
                 **extra_info.model_dump()
             )
-            parser.options.append(option)
+            if argument.required:
+                parser.required_keyword_arguments.append(argument)
+            else:
+                parser.optional_keyword_arguments.append(argument)
 
         if isinstance(extra_info, ExtraInfoSubcommand):
             subcommand = Subcommand(
                 attribute_name=attribute_name,
+                alisa=field_info.alias,
                 description=field_info.description,
                 model=field_info.annotation,
                 **extra_info.model_dump()
             )
             parser.subcommands.append(subcommand)
 
-    print(parser)
+    # print(parser)
 
     args = sys.argv
-    print(args)
+    args_ = []
+    for arg in args[1:]:
+        key, _, value = arg.partition("=")
+        args_.append(key)
+        if value:
+            args_.append(value)
+    print(args_)
 
-    args_model = parser.resolve(args[1:])
+    args_model = parser.resolve(args_)
 
-    print(args_model)
+    return args_model
 
 
 

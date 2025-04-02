@@ -76,17 +76,16 @@ class PydanticArgparserError(Exception):
 
 class ArgumentBase(BaseModel):
     attribute_name: str
+    alias: str | None = None
     description: str | None = None
-    required: bool = True
     default: Any = PydanticUndefined
 
-    def model_post_init(self, context: Any) -> None:
-        print("MODEL POST INIT")
-        print(self)
+    @property
+    def required(self) -> bool:
         if self.default is not PydanticUndefined:
-            self.required = False
+            return False
         else:
-            self.required = True
+            return True
 
 
 class Argument(ArgumentBase):
@@ -94,10 +93,9 @@ class Argument(ArgumentBase):
 
 
 class KeywordArgument(ArgumentBase):
-    alias: str | None = None
 
     @property
-    def options_names(self):
+    def keyword_arguments_names(self):
         names = []
 
         name = self.attribute_name.replace("_", "-")
@@ -115,39 +113,62 @@ class KeywordArgument(ArgumentBase):
 
 class Subcommand(BaseModel):
     attribute_name: str
+    alias: str | None = None
     description: str | None = None
     model: BaseModel
 
 
 class Parser(BaseModel):
-    arguments: list[Argument] = []
-    options: list[KeywordArgument] = []
+    required_arguments: list[Argument] = []
+    optional_arguments: list[Argument] = []
+    required_keyword_arguments: list[KeywordArgument] = []
+    optional_keyword_arguments: list[KeywordArgument] = []
     subcommands: list[Subcommand] = []
     model: Type[pydantic.BaseModel]
 
     def resolve(self, args: list[str]) -> BaseModel:
         schema = {}
 
-        for argument in self.arguments:
+        # Required positional arguments
+        for argument in self.required_arguments:
             if args[0].startswith("-") is False:
-                schema[argument.attribute_name] = args[0]
+                name = argument.attribute_name if argument.alias is None else argument.alias
+                schema[name] = args[0]
                 args.pop(0)
             else:
-                if argument.required:
-                    raise PydanticArgparserError(f"Argument {argument.attribute_name} is required")
+                raise PydanticArgparserError(f"Argument {argument.attribute_name} is required")
 
+        # Optional positional arguments
+        for argument in self.optional_arguments:
+            if args[0].startswith("-") is False:
+                name = argument.attribute_name if argument.alias is None else argument.alias
+                schema[name] = args[0]
+                args.pop(0)
+            else:
+                break
+
+        # Excess arguments
         if len(args) > 0 and args[0].startswith("-") is False:
             raise PydanticArgparserError(f"Argument {args[0]} is not defined")
 
-        for option in self.options:
-            option_position = find_any(args, option.options_names)
+        # Required keyword arguments
+        for argument in self.required_keyword_arguments:
+            argument_position = find_any(args, argument.keyword_arguments_names)
 
-            if option_position == -1:
-                if option.required:
-                    raise PydanticArgparserError(f"Option {option.options_names[0]} is required")
-                else:
-                    continue
+            if argument_position == -1:
+                raise PydanticArgparserError(f"Option {argument.keyword_arguments_names[0]} is required")
             else:
-                schema[option.attribute_name] = args[option_position + 1]
+                name = argument.attribute_name if argument.alias is None else argument.alias
+                schema[name] = args[argument_position + 1]
 
+        # Optional keyword arguments
+        for argument in self.optional_keyword_arguments:
+            argument_position = find_any(args, argument.keyword_arguments_names)
+            if argument_position == -1:
+                continue
+            else:
+                name = argument.attribute_name if argument.alias is None else argument.alias
+                schema[name] = args[argument_position + 1]
+
+        print(schema)
         return self.model(**schema)
