@@ -32,6 +32,7 @@ def parse(model: Type[BaseModel] | BaseModel, parser_=None, schema_: dict = None
                 default=field_info.default,
                 **extra_info.model_dump()
             )
+            argument.__filed_info__ = field_info
             if argument.required:
                 parser.required_arguments.append(argument)
             else:
@@ -43,8 +44,10 @@ def parse(model: Type[BaseModel] | BaseModel, parser_=None, schema_: dict = None
                 alias=field_info.alias,
                 description=field_info.description,
                 default=field_info.default,
+                field_info=field_info,
                 **extra_info.model_dump()
             )
+            argument.__filed_info__ = field_info
             if argument.required:
                 parser.required_keyword_arguments.append(argument)
             else:
@@ -58,6 +61,7 @@ def parse(model: Type[BaseModel] | BaseModel, parser_=None, schema_: dict = None
                 model=field_info.annotation,
                 **extra_info.model_dump()
             )
+            subcommand.__filed_info__ = field_info
             parser.subcommands.append(subcommand)
 
     # print(parser)

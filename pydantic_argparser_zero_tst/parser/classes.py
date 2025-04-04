@@ -1,11 +1,13 @@
 import pydantic
 from pydantic import BaseModel
 from pydantic_core import PydanticUndefined
+# noinspection PyUnresolvedReferences,PyProtectedMember
+from pydantic.fields import FieldInfo
 from typing import Any, Type
 # noinspection PyUnresolvedReferences
 from typing import Literal
 from .utils import find_any
-from rich.console import Console
+from rich.console import Console, Group
 from rich.panel import Panel
 from rich.table import Table, box
 from rich.style import Style
@@ -82,8 +84,9 @@ class PydanticArgparserError(Exception):
 class ArgumentBase(BaseModel):
     attribute_name: str
     alias: str | None = None
-    description: str | None = None
+    description: str = ""
     default: Any = PydanticUndefined
+    __filed_info__: FieldInfo = None
 
     @property
     def required(self) -> bool:
@@ -91,6 +94,28 @@ class ArgumentBase(BaseModel):
             return False
         else:
             return True
+
+    @property
+    def help_text(self) -> list[str]:
+        if isinstance(self, Argument):
+            name = self.attribute_name
+            alias = "" if self.alias is None else f"({self.alias})"
+        elif isinstance(self, KeywordArgument):
+            name = self.keyword_arguments_names[0]
+            alias = "" if self.alias is None else f"({self.keyword_arguments_names[1]})"
+        else:
+            raise IOError(f"Type {type(self)} not recognized")
+
+        default = "" if self.required else f"[Default: {str(self.default)}]"
+        description = self.description
+
+        result = [
+            name,
+            alias,
+            description,
+            default,
+        ]
+        return result
 
 
 class Argument(ArgumentBase):
@@ -121,6 +146,7 @@ class Subcommand(BaseModel):
     alias: str | None = None
     description: str | None = None
     model: BaseModel
+    __field_info__: FieldInfo = None
 
 
 class Parser(BaseModel):
@@ -146,109 +172,53 @@ class Parser(BaseModel):
 
         console.print(program)
 
-        if len(self.required_arguments) > 0:
-            arguments_table = Table(show_header=False, box=None)
-
-            for argument in self.required_arguments:
-                if argument.alias:
-                    alias = f"({argument.alias})"
-                else:
-                    alias = ""
-
-                arguments_table.add_row(
-                    argument.attribute_name,
-                    alias,
-                    argument.description
+        def get_table(x: list[Argument | KeywordArgument], title: str) -> Panel:
+            table = Table(show_header=False, box=None)
+            for arg in x:
+                table.add_row(
+                    *arg.help_text,
                 )
-            arguments_panel = Panel(
-                arguments_table,
+
+            panel = Panel(
+                table,
                 title_align="left",
-                title="Required positional arguments",
+                title=title,
+                border_style="bold yellow"
+
+            )
+            return panel
+
+        arguments = []
+        if self.required_arguments:
+            arguments.append(get_table(self.required_arguments, title="Required"))
+        if self.optional_arguments:
+            arguments.append(get_table(self.optional_arguments, title="Optional"))
+
+        if arguments:
+            positional_arguments = Panel(
+                Group(*arguments),
+                title_align="left",
+                title="Positional arguments",
                 border_style="bold blue"
             )
 
-            console.print(arguments_panel)
+            console.print(positional_arguments)
 
-        if len(self.optional_arguments) > 0:
-            arguments_table = Table(show_header=False, box=None)
-            for argument in self.optional_arguments:
+        arguments = []
+        if self.required_arguments:
+            arguments.append(get_table(self.required_keyword_arguments, title="Required"))
+        if self.optional_arguments:
+            arguments.append(get_table(self.optional_keyword_arguments, title="Optional"))
 
-                default = f"[Default: {str(argument.default)}]"
-                if argument.alias:
-                    alias = f"({argument.alias})"
-                else:
-                    alias = ""
-
-                arguments_table.add_row(
-                    argument.attribute_name,
-                    alias,
-                    argument.description,
-                    default
-                )
-            arguments_panel = Panel(
-                arguments_table,
+        if arguments:
+            positional_kwarguments = Panel(
+                Group(*arguments),
                 title_align="left",
-                title="Optional positional arguments",
+                title="Keyword arguments",
                 border_style="bold blue"
             )
 
-            console.print(arguments_panel)
-
-        if len(self.required_keyword_arguments) > 0:
-            arguments_table = Table(show_header=False, box=None)
-            for argument in self.required_keyword_arguments:
-                names = argument.keyword_arguments_names
-                name = names[0]
-
-                if len(names) > 1:
-                    alias = f"({names[1]})"
-                else:
-                    alias = ""
-
-                arguments_table.add_row(
-                    name,
-                    alias,
-                    argument.description
-                )
-            arguments_panel = Panel(
-                arguments_table,
-                title_align="left",
-                title="Required keyword arguments",
-                border_style="bold blue"
-            )
-
-            console.print(arguments_panel)
-
-        if len(self.optional_keyword_arguments) > 0:
-            arguments_table = Table(show_header=False, box=None)
-            for argument in self.optional_keyword_arguments:
-                names = argument.keyword_arguments_names
-                name = names[0]
-
-                default = f"[Default: {str(argument.default)}]"
-
-                if len(names) > 1:
-                    alias = f"({names[1]})"
-                else:
-                    alias = ""
-
-                arguments_table.add_row(
-                    name,
-                    alias,
-                    argument.description,
-                    default
-                )
-            arguments_panel = Panel(
-                arguments_table,
-                title_align="left",
-                title="Optional keyword arguments",
-                border_style="bold blue"
-            )
-
-            console.print(arguments_panel)
-
-
-
+            console.print(positional_kwarguments)
 
         sys.exit(0)
 
