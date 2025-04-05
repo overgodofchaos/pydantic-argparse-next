@@ -96,6 +96,10 @@ class ArgumentBase(BaseModel):
         super().__init__(attribute_name=attribute_name, **kwargs)
         self.__filed_info__ = field_info
         self.__extra_info__ = extra_info
+        self.argument_validate()
+
+    def argument_validate(self):
+        pass
 
     @property
     def alias(self) -> str | None:
@@ -154,24 +158,47 @@ class ArgumentBase(BaseModel):
 
 
 class Argument(ArgumentBase):
-    pass
+
+    def argument_validate(self):
+        if self.type is bool:
+            raise PydanticArgparserError("Positional argument can't be a boolean")
 
 
 class KeywordArgument(ArgumentBase):
+
+    def argument_validate(self):
+        if (self.type is bool and
+                (self.default is not False and
+                 self.default is not True)):
+            print(self.default, self.attribute_name)
+            raise PydanticArgparserError("Boolean argument must have a default boolean value")
+
+    @property
+    def action(self) -> str:
+        if self.type is bool:
+            if self.default is False:
+                return "store_true"
+            elif self.default is True:
+                return "store_false"
+            else:
+                raise PydanticArgparserError("Default for boolean argument must be True or False")
+
+        return "normal"
 
     @property
     def keyword_arguments_names(self):
         names = []
 
         name = self.attribute_name.replace("_", "-")
+        if self.action == "store_false":
+            name = f"no-{name}"
         names.append(f"--{name}")
 
         if self.alias is not None:
             alias = self.alias.replace("_", "-")
-            if alias.startswith("-"):
-                names.append(f"{alias}")
-            else:
-                names.append(f"--{alias}")
+            if self.action == "store_false":
+                alias = f"no-{alias}"
+            names.append(f"--{alias}")
 
         return names
 
@@ -290,13 +317,14 @@ class Parser(BaseModel):
 
                 console.print(positional_arguments)
 
-        subcommands = Panel(
-            get_help_panel(self.subcommands, title=None),
-            title_align="left",
-            title="Subcommands",
-            border_style="bold blue"
-        )
-        console.print(subcommands)
+        if len(self.subcommands) > 0:
+            subcommands = Panel(
+                get_help_panel(self.subcommands, title=None),
+                title_align="left",
+                title="Subcommands",
+                border_style="bold blue"
+            )
+            console.print(subcommands)
 
         program = Panel(
             self.program_epilog,
@@ -365,7 +393,13 @@ class Parser(BaseModel):
                 continue
             else:
                 name = argument.attribute_name if argument.alias is None else argument.alias
-                schema[name] = args[argument_position + 1]
+                match argument.action:
+                    case "store_true":
+                        schema[name] = True
+                    case "store_false":
+                        schema[name] = False
+                    case "normal":
+                        schema[name] = args[argument_position + 1]
 
         # Subcommands
         for subcommand in self.subcommands:
