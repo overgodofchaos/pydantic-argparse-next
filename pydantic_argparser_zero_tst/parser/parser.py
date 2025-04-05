@@ -9,52 +9,7 @@ from .classes import Argument, KeywordArgument, Subcommand, Parser
 import sys
 
 
-def parse(model: Type[BaseModel] | BaseModel, parser_=None, schema_: dict = None, depth: int = 0) -> BaseModel | None:
-    model_fields = model.model_fields
-
-    parser = Parser(model=model)
-
-    for field in model_fields.keys():
-        field_info: FieldInfo = model_fields[field]
-
-        attribute_name = field
-
-        try:
-            extra_info = field_info.json_schema_extra["pydantic_argparser_zero_extra"]
-        except KeyError:
-            continue
-
-        if isinstance(extra_info, ExtraInfoArgument):
-            argument = Argument(
-                attribute_name=attribute_name,
-                field_info=field_info,
-                extra_info=extra_info,
-            )
-            if argument.required:
-                parser.required_arguments.append(argument)
-            else:
-                parser.optional_arguments.append(argument)
-
-        if isinstance(extra_info, ExtraInfoKeywordArgument):
-            argument = KeywordArgument(
-                attribute_name=attribute_name,
-                field_info=field_info,
-                extra_info=extra_info,
-            )
-            if argument.required:
-                parser.required_keyword_arguments.append(argument)
-            else:
-                parser.optional_keyword_arguments.append(argument)
-
-        if isinstance(extra_info, ExtraInfoSubcommand):
-            subcommand = Subcommand(
-                attribute_name=attribute_name,
-                field_info=field_info,
-                extra_info=extra_info,
-            )
-            parser.subcommands.append(subcommand)
-
-    # print(parser)
+def parse(model: Type[BaseModel] | BaseModel) -> BaseModel | None:
 
     args = sys.argv
     args_ = []
@@ -63,9 +18,12 @@ def parse(model: Type[BaseModel] | BaseModel, parser_=None, schema_: dict = None
         args_.append(key)
         if value:
             args_.append(value)
-    print(args_)
 
-    args_model = parser.resolve(args_)
+    parser = Parser(model=model, args=args_)
+
+    # print(parser)
+
+    args_model = parser.resolve()
 
     return args_model
 

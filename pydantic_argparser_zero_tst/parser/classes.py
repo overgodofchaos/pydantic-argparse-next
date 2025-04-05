@@ -6,6 +6,7 @@ from pydantic.fields import FieldInfo
 from typing import Any, Type
 # noinspection PyUnresolvedReferences
 from typing import Literal, Optional, Union
+from typing import Type, Any, get_args, get_origin
 from .utils import find_any
 from rich.console import Console, Group
 from rich.panel import Panel
@@ -112,6 +113,14 @@ class ArgumentBase(BaseModel):
         return self.__filed_info__.default
 
     @property
+    def type(self):
+        type_ = self.__filed_info__.annotation
+        if str(type_).find("Optional") != -1:
+            return get_args(type_)[0]
+        else:
+            return type_
+
+    @property
     def required(self) -> bool:
         if self.default is not PydanticUndefined:
             return False
@@ -126,6 +135,9 @@ class ArgumentBase(BaseModel):
         elif isinstance(self, KeywordArgument):
             name = self.keyword_arguments_names[0]
             alias = "" if self.alias is None else f"({self.keyword_arguments_names[1]})"
+        elif isinstance(self, Subcommand):
+            name = self.attribute_name
+            alias = "" if self.alias is None else f"({self.alias})"
         else:
             raise IOError(f"Type {type(self)} not recognized")
 
@@ -164,12 +176,8 @@ class KeywordArgument(ArgumentBase):
         return names
 
 
-class Subcommand(BaseModel):
-    attribute_name: str
-    alias: str | None = None
-    description: str | None = None
-    model: BaseModel
-    __field_info__: FieldInfo = None
+class Subcommand(ArgumentBase):
+    pass
 
 
 class Parser(BaseModel):
@@ -183,6 +191,54 @@ class Parser(BaseModel):
     optional_keyword_arguments: list[KeywordArgument] = []
     subcommands: list[Subcommand] = []
     model: Type[pydantic.BaseModel]
+    args: list[str]
+
+    def model_post_init(self, context: Any) -> None:
+        model = self.model
+        model_fields = model.model_fields
+
+        for field in model_fields.keys():
+            field_info: FieldInfo = model_fields[field]
+
+            attribute_name = field
+
+            try:
+                extra_info = field_info.json_schema_extra["pydantic_argparser_zero_extra"]
+            except KeyError:
+                continue
+
+            if isinstance(extra_info, ExtraInfoArgument):
+                # noinspection PyArgumentList
+                argument = Argument(
+                    attribute_name=attribute_name,
+                    field_info=field_info,
+                    extra_info=extra_info,
+                )
+                if argument.required:
+                    self.required_arguments.append(argument)
+                else:
+                    self.optional_arguments.append(argument)
+
+            if isinstance(extra_info, ExtraInfoKeywordArgument):
+                # noinspection PyArgumentList
+                argument = KeywordArgument(
+                    attribute_name=attribute_name,
+                    field_info=field_info,
+                    extra_info=extra_info,
+                )
+                if argument.required:
+                    self.required_keyword_arguments.append(argument)
+                else:
+                    self.optional_keyword_arguments.append(argument)
+
+            if isinstance(extra_info, ExtraInfoSubcommand):
+                # noinspection PyArgumentList
+                subcommand = Subcommand(
+                    attribute_name=attribute_name,
+                    field_info=field_info,
+                    extra_info=extra_info,
+                )
+                self.subcommands.append(subcommand)
 
     def help(self):
         console = Console()
@@ -196,7 +252,7 @@ class Parser(BaseModel):
 
         console.print(program)
 
-        def get_help_panel(x: list[Argument | KeywordArgument], title: str) -> Panel:
+        def get_help_panel(x: list[Argument | KeywordArgument | Subcommand], title: str | None) -> Panel:
             table = Table(show_header=False, box=None)
             for arg in x:
                 table.add_row(
@@ -214,7 +270,7 @@ class Parser(BaseModel):
 
         x = [
             [self.required_arguments, self.optional_arguments, "Positianal arguments"],
-            [self.required_keyword_arguments, self.optional_keyword_arguments, "Keyword arguments"]
+            [self.required_keyword_arguments, self.optional_keyword_arguments, "Keyword arguments"],
         ]
 
         for s in x:
@@ -234,6 +290,14 @@ class Parser(BaseModel):
 
                 console.print(positional_arguments)
 
+        subcommands = Panel(
+            get_help_panel(self.subcommands, title=None),
+            title_align="left",
+            title="Subcommands",
+            border_style="bold blue"
+        )
+        console.print(subcommands)
+
         program = Panel(
             self.program_epilog,
             title_align="left",
@@ -245,13 +309,22 @@ class Parser(BaseModel):
 
         sys.exit(0)
 
-
-    def resolve(self, args: list[str]) -> BaseModel:
+    def resolve(self, subcommand_: bool = False) -> BaseModel | dict:
         schema = {}
+        args = self.args
 
         # Help
         if find_any(args, ["--help", "-H"]) != -1:
             self.help()
+
+        if len(self.subcommands) > 0:
+            subcommand_position = find_any(args, [x.attribute_name for x in self.subcommands])
+            if subcommand_position > -1:
+                args = self.args[:subcommand_position]
+                subcommand_args = self.args[subcommand_position + 1:]
+                subcommand_name = self.args[subcommand_position]
+            else:
+                raise PydanticArgparserError("Subcommand required")
 
         # Required positional arguments
         for argument in self.required_arguments:
@@ -294,5 +367,22 @@ class Parser(BaseModel):
                 name = argument.attribute_name if argument.alias is None else argument.alias
                 schema[name] = args[argument_position + 1]
 
+        # Subcommands
+        for subcommand in self.subcommands:
+            # noinspection PyUnboundLocalVariable
+            if subcommand.attribute_name == subcommand_name:
+                # noinspection PyUnboundLocalVariable,PyTypeChecker
+                # noinspection PyUnboundLocalVariable
+                schema[subcommand.attribute_name] = Parser(
+                    model=subcommand.type,
+                    args=subcommand_args
+                ).resolve(subcommand_=True)
+            else:
+                schema[subcommand.attribute_name] = None
+
         print(schema)
-        return self.model(**schema)
+
+        if subcommand_:
+            return schema
+        else:
+            return self.model(**schema)
