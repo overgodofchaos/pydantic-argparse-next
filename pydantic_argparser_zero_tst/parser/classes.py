@@ -5,7 +5,7 @@ from pydantic_core import PydanticUndefined
 from pydantic.fields import FieldInfo
 from typing import Any, Type
 # noinspection PyUnresolvedReferences
-from typing import Literal
+from typing import Literal, Optional, Union
 from .utils import find_any
 from rich.console import Console, Group
 from rich.panel import Panel
@@ -83,10 +83,33 @@ class PydanticArgparserError(Exception):
 
 class ArgumentBase(BaseModel):
     attribute_name: str
-    alias: str | None = None
-    description: str = ""
-    default: Any = PydanticUndefined
     __filed_info__: FieldInfo = None
+    __extra_info__: Union[ExtraInfoArgument, ExtraInfoKeywordArgument, ExtraInfoSubcommand] = None
+
+    def __init__(self,
+                 *args,
+                 attribute_name: str,
+                 field_info: FieldInfo,
+                 extra_info: Union[ExtraInfoArgument, ExtraInfoKeywordArgument, ExtraInfoSubcommand],
+                 **kwargs):
+        super().__init__(attribute_name=attribute_name, **kwargs)
+        self.__filed_info__ = field_info
+        self.__extra_info__ = extra_info
+
+    @property
+    def alias(self) -> str | None:
+        return self.__filed_info__.alias
+
+    @property
+    def description(self) -> str:
+        if self.__filed_info__.description:
+            return self.__filed_info__.description
+        else:
+            return ""
+
+    @property
+    def default(self) -> Any:
+        return self.__filed_info__.default
 
     @property
     def required(self) -> bool:
@@ -172,7 +195,7 @@ class Parser(BaseModel):
 
         console.print(program)
 
-        def get_table(x: list[Argument | KeywordArgument], title: str) -> Panel:
+        def get_help_panel(x: list[Argument | KeywordArgument], title: str) -> Panel:
             table = Table(show_header=False, box=None)
             for arg in x:
                 table.add_row(
@@ -188,37 +211,27 @@ class Parser(BaseModel):
             )
             return panel
 
-        arguments = []
-        if self.required_arguments:
-            arguments.append(get_table(self.required_arguments, title="Required"))
-        if self.optional_arguments:
-            arguments.append(get_table(self.optional_arguments, title="Optional"))
+        x = [
+            [self.required_arguments, self.optional_arguments, "Positianal arguments"],
+            [self.required_keyword_arguments, self.optional_keyword_arguments, "Keyword arguments"]
+        ]
 
-        if arguments:
-            positional_arguments = Panel(
-                Group(*arguments),
-                title_align="left",
-                title="Positional arguments",
-                border_style="bold blue"
-            )
+        for s in x:
+            arguments = []
+            if self.required_arguments:
+                arguments.append(get_help_panel(s[0], title="Required"))
+            if self.optional_arguments:
+                arguments.append(get_help_panel(s[1], title="Optional"))
 
-            console.print(positional_arguments)
+            if arguments:
+                positional_arguments = Panel(
+                    Group(*arguments),
+                    title_align="left",
+                    title=s[2],
+                    border_style="bold blue"
+                )
 
-        arguments = []
-        if self.required_arguments:
-            arguments.append(get_table(self.required_keyword_arguments, title="Required"))
-        if self.optional_arguments:
-            arguments.append(get_table(self.optional_keyword_arguments, title="Optional"))
-
-        if arguments:
-            positional_kwarguments = Panel(
-                Group(*arguments),
-                title_align="left",
-                title="Keyword arguments",
-                border_style="bold blue"
-            )
-
-            console.print(positional_kwarguments)
+                console.print(positional_arguments)
 
         sys.exit(0)
 

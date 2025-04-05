@@ -27,12 +27,9 @@ def parse(model: Type[BaseModel] | BaseModel, parser_=None, schema_: dict = None
         if isinstance(extra_info, ExtraInfoArgument):
             argument = Argument(
                 attribute_name=attribute_name,
-                alias=field_info.alias,
-                description=field_info.description,
-                default=field_info.default,
-                **extra_info.model_dump()
+                field_info=field_info,
+                extra_info=extra_info,
             )
-            argument.__filed_info__ = field_info
             if argument.required:
                 parser.required_arguments.append(argument)
             else:
@@ -41,13 +38,9 @@ def parse(model: Type[BaseModel] | BaseModel, parser_=None, schema_: dict = None
         if isinstance(extra_info, ExtraInfoKeywordArgument):
             argument = KeywordArgument(
                 attribute_name=attribute_name,
-                alias=field_info.alias,
-                description=field_info.description,
-                default=field_info.default,
                 field_info=field_info,
-                **extra_info.model_dump()
+                extra_info=extra_info,
             )
-            argument.__filed_info__ = field_info
             if argument.required:
                 parser.required_keyword_arguments.append(argument)
             else:
@@ -56,12 +49,9 @@ def parse(model: Type[BaseModel] | BaseModel, parser_=None, schema_: dict = None
         if isinstance(extra_info, ExtraInfoSubcommand):
             subcommand = Subcommand(
                 attribute_name=attribute_name,
-                alisa=field_info.alias,
-                description=field_info.description,
-                model=field_info.annotation,
-                **extra_info.model_dump()
+                field_info=field_info,
+                extra_info=extra_info,
             )
-            subcommand.__filed_info__ = field_info
             parser.subcommands.append(subcommand)
 
     # print(parser)
