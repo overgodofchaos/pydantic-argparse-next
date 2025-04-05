@@ -175,6 +175,7 @@ class Subcommand(BaseModel):
 class Parser(BaseModel):
     program_name: str = "Default program name"
     program_description: str = "Default program description"
+    program_epilog: str = "Default program epilog"
 
     required_arguments: list[Argument] = []
     optional_arguments: list[Argument] = []
@@ -232,6 +233,15 @@ class Parser(BaseModel):
                 )
 
                 console.print(positional_arguments)
+
+        program = Panel(
+            self.program_epilog,
+            title_align="left",
+            title=None,
+            border_style="bold yellow"
+        )
+
+        console.print(program)
 
         sys.exit(0)
 
