@@ -13,6 +13,7 @@ from rich.panel import Panel
 from rich.table import Table, box
 from rich.style import Style
 import sys
+from enum import Enum
 
 
 # noinspection PyRedeclaration
@@ -119,17 +120,53 @@ class ArgumentBase(BaseModel):
     @property
     def type(self):
         type_ = self.__filed_info__.annotation
-        if str(type_).find("Optional") != -1:
+        if self.optional_annotation:
             return get_args(type_)[0]
         else:
             return type_
 
     @property
+    def optional_annotation(self):
+        type_ = self.__filed_info__.annotation
+        if str(type_).find("Optional") != -1:
+            return True
+        else:
+            return False
+
+    @property
     def required(self) -> bool:
-        if self.default is not PydanticUndefined:
+        if self.default is not PydanticUndefined or self.optional_annotation is True:
             return False
         else:
             return True
+
+    @property
+    def choices(self) -> list[str]:
+        if self.action != "choice":
+            raise PydanticArgparserError("Choices list available only for choice argument")
+        if get_origin(self.type) is Literal:
+            choices = get_args(self.type)
+            return [str(x) for x in choices]
+        elif issubclass(self.type, Enum):
+            # noinspection PyProtectedMember
+            choices = self.type._member_names_
+            return [str(x) for x in choices]
+        else:
+            raise PydanticArgparserError(f"Type {self.type} is not supported for choices")
+
+    @property
+    def action(self) -> str:
+        if self.type is bool:
+            if self.default is False:
+                return "store_true"
+            elif self.default is True:
+                return "store_false"
+            else:
+                raise PydanticArgparserError("Default for boolean argument must be True or False")
+        if get_origin(self.type) is Literal or issubclass(self.type, Enum):
+            return "choice"
+
+        return "normal"
 
     @property
     def help_text(self) -> list[str]:
@@ -145,16 +182,44 @@ class ArgumentBase(BaseModel):
         else:
             raise IOError(f"Type {type(self)} not recognized")
 
-        default = "" if self.required else f"[Default: {str(self.default)}]"
+        if self.action == "choice" and isinstance(self.default, Enum):
+            default = "" if self.required else f"[Default: {str(self.default.name)}]"
+        else:
+            if self.default is PydanticUndefined:
+                default = "[Default: None]"
+            else:
+                default = "" if self.required else f"[Default: {str(self.default)}]"
+
         description = self.description
+
+        match self.action:
+            case "choice":
+                input_ = "{" + f"{'|'.join(self.choices)}" + "}"
+            case "store_false" | "store_true":
+                input_ = "STORE"
+            case _:
+                input_ = "TEXT"
+
+        if isinstance(self, Subcommand):
+            input_ = ""
+            default = ""
 
         result = [
             name,
             alias,
+            input_,
             description,
             default,
         ]
         return result
+
+    def resolve_choice(self, x: str) -> str | Enum:
+        if get_origin(self.type) is Literal:
+            return x
+        elif issubclass(self.type, Enum):
+            return self.type[x]
+        else:
+            raise PydanticArgparserError(f"resolve_choice method only for choice argument")
 
 
 class Argument(ArgumentBase):
@@ -172,18 +237,6 @@ class KeywordArgument(ArgumentBase):
                  self.default is not True)):
             print(self.default, self.attribute_name)
             raise PydanticArgparserError("Boolean argument must have a default boolean value")
-
-    @property
-    def action(self) -> str:
-        if self.type is bool:
-            if self.default is False:
-                return "store_true"
-            elif self.default is True:
-                return "store_false"
-            else:
-                raise PydanticArgparserError("Default for boolean argument must be True or False")
-
-        return "normal"
 
     @property
     def keyword_arguments_names(self):
@@ -231,8 +284,8 @@ class Parser(BaseModel):
 
             try:
                 extra_info = field_info.json_schema_extra["pydantic_argparser_zero_extra"]
-            except KeyError:
-                continue
+            except (KeyError, TypeError):
+                extra_info = ExtraInfoKeywordArgument()
 
             if isinstance(extra_info, ExtraInfoArgument):
                 # noinspection PyArgumentList
@@ -354,52 +407,52 @@ class Parser(BaseModel):
             else:
                 raise PydanticArgparserError("Subcommand required")
 
-        # Required positional arguments
-        for argument in self.required_arguments:
+        # Positional arguments
+        for argument in self.required_arguments + self.optional_arguments:
+            name = argument.attribute_name if argument.alias is None else argument.alias
             if args[0].startswith("-") is False:
-                name = argument.attribute_name if argument.alias is None else argument.alias
-                schema[name] = args[0]
+                if argument.action == "choice":
+                    schema[name] = argument.resolve_choice(args[0])
+                else:
+                    schema[name] = args[0]
                 args.pop(0)
             else:
-                raise PydanticArgparserError(f"Argument {argument.attribute_name} is required")
+                if argument.required:
+                    raise PydanticArgparserError(f"Argument {argument.attribute_name} is required")
+                continue
 
-        # Optional positional arguments
-        for argument in self.optional_arguments:
-            if args[0].startswith("-") is False:
-                name = argument.attribute_name if argument.alias is None else argument.alias
-                schema[name] = args[0]
-                args.pop(0)
-            else:
-                break
-
-        # Excess arguments
+        # Excess positional arguments
         if len(args) > 0 and args[0].startswith("-") is False:
             raise PydanticArgparserError(f"Argument {args[0]} is not defined")
 
-        # Required keyword arguments
-        for argument in self.required_keyword_arguments:
+        # Keyword argumwnts
+        for argument in self.required_keyword_arguments + self.optional_keyword_arguments:
             argument_position = find_any(args, argument.keyword_arguments_names)
 
             if argument_position == -1:
-                raise PydanticArgparserError(f"Option {argument.keyword_arguments_names[0]} is required")
-            else:
-                name = argument.attribute_name if argument.alias is None else argument.alias
-                schema[name] = args[argument_position + 1]
-
-        # Optional keyword arguments
-        for argument in self.optional_keyword_arguments:
-            argument_position = find_any(args, argument.keyword_arguments_names)
-            if argument_position == -1:
+                if argument.required:
+                    raise PydanticArgparserError(f"Option {argument.keyword_arguments_names[0]} is required")
                 continue
-            else:
-                name = argument.attribute_name if argument.alias is None else argument.alias
-                match argument.action:
-                    case "store_true":
-                        schema[name] = True
-                    case "store_false":
-                        schema[name] = False
-                    case "normal":
-                        schema[name] = args[argument_position + 1]
+
+            name = argument.attribute_name if argument.alias is None else argument.alias
+
+            match argument.action:
+                case "normal":
+                    schema[name] = args[argument_position + 1]
+                case "store_true":
+                    schema[name] = True
+                case "store_false":
+                    schema[name] = False
+                case "choice":
+                    schema[name] = argument.resolve_choice(args[argument_position + 1])
+
+        # Processing optional annotation
+        for argument in self.optional_arguments + self.optional_keyword_arguments:
+            name = argument.attribute_name if argument.alias is None else argument.alias
+            if argument.action == "normal":
+                if name not in schema:
+                    if argument.optional_annotation and argument.default is PydanticUndefined:
+                        schema[name] = None
 
         # Subcommands
         for subcommand in self.subcommands:
@@ -414,7 +467,7 @@ class Parser(BaseModel):
             else:
                 schema[subcommand.attribute_name] = None
 
-        print(schema)
+        # print(schema)
 
         if subcommand_:
             return schema

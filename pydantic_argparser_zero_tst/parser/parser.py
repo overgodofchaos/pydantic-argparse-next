@@ -9,15 +9,18 @@ from .classes import Argument, KeywordArgument, Subcommand, Parser
 import sys
 
 
-def parse(model: Type[BaseModel] | BaseModel) -> BaseModel | None:
+def parse(model: Type[BaseModel] | BaseModel, args: list[str] = None) -> BaseModel | None:
 
-    args = sys.argv
-    args_ = []
-    for arg in args[1:]:
-        key, _, value = arg.partition("=")
-        args_.append(key)
-        if value:
-            args_.append(value)
+    if args is None:
+        args = sys.argv
+        args_ = []
+        for arg in args[1:]:
+            key, _, value = arg.partition("=")
+            args_.append(key)
+            if value:
+                args_.append(value)
+    else:
+        args_ = args
 
     parser = Parser(model=model, args=args_)
 
