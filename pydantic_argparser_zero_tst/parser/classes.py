@@ -14,6 +14,7 @@ from rich.table import Table, box
 from rich.style import Style
 import sys
 from enum import Enum
+from pathlib import Path
 
 
 # noinspection PyRedeclaration
@@ -320,9 +321,24 @@ class Parser(BaseModel):
                 )
                 self.subcommands.append(subcommand)
 
+    def _get_usage_text(self):
+        script_path = Path(sys.argv[0])
+        script_name = script_path.stem
+        script_usage = script_name
+        if len(self.required_arguments) > 0:
+            script_usage += f" [REQ ARGS]"
+        if len(self.optional_arguments) > 0:
+            script_usage += f" [OPT ARGS]"
+        if len(self.required_keyword_arguments) > 0 or len(self.optional_keyword_arguments) > 0:
+            script_usage += f" [KWARGS]"
+        if len(self.subcommands) > 0:
+            script_usage += f" [SUBCOMMAND]"
+        return script_usage
+
     def help(self):
         console = Console()
 
+        # Program name and description
         program = Panel(
             self.program_description,
             title_align="left",
@@ -332,6 +348,16 @@ class Parser(BaseModel):
 
         console.print(program)
 
+        # Usage
+        usage = Panel(
+            self._get_usage_text(),
+            title_align="left",
+            title="Usage",
+            border_style="bold yellow"
+        )
+        console.print(usage)
+
+        # Arguments
         def get_help_panel(x: list[Argument | KeywordArgument | Subcommand], title: str | None) -> Panel:
             table = Table(show_header=False, box=None)
             for arg in x:
@@ -370,6 +396,7 @@ class Parser(BaseModel):
 
                 console.print(positional_arguments)
 
+        # Subcommands
         if len(self.subcommands) > 0:
             subcommands = Panel(
                 get_help_panel(self.subcommands, title=None),
@@ -379,6 +406,7 @@ class Parser(BaseModel):
             )
             console.print(subcommands)
 
+        # Epilog
         program = Panel(
             self.program_epilog,
             title_align="left",
