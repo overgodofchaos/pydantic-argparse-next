@@ -15,6 +15,7 @@ from rich.style import Style
 import sys
 from enum import Enum
 from pathlib import Path
+import types
 
 
 # noinspection PyRedeclaration
@@ -130,6 +131,9 @@ class ArgumentBase(BaseModel):
     def optional_annotation(self):
         type_ = self.__filed_info__.annotation
         if str(type_).find("Optional") != -1:
+            return True
+        elif (types.UnionType is get_origin(type_) and
+                type(None) in get_args(type_)):
             return True
         else:
             return False

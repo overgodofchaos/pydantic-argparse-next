@@ -1,6 +1,6 @@
 from pydantic_argparser_zero_tst import Arg, KwArg, Subcommand, parse
 from pydantic import BaseModel, Field
-from typing import Optional, Literal
+from typing import Optional, Literal, Union
 from enum import Enum
 
 
@@ -34,16 +34,17 @@ class Commands(BaseModel):
     arg7: str = Field("example", description="It is a optional keyword argument.")
     arg8: Optional[str] = KwArg(..., description="It is a optional keyword argument.")
     arg9: Optional[str] = Field(..., description="It is a optional keyword argument.")
+    arg10: str | None = KwArg(..., description="It is a optional keyword argument.")
 
     # Choice arguments (can be positional or keyword)
-    arg10: Literal["example1", "example2"] = KwArg("example1", description="It is a choice keyword argument.")
-    arg11: Choices = KwArg(Choices.example1, description="It is a choice keyword argument.")
+    arg11: Literal["example1", "example2"] = KwArg("example1", description="It is a choice keyword argument.")
+    arg12: Choices = KwArg(Choices.example1, description="It is a choice keyword argument.")
 
     # Store true argument (can be only optional keyword)
-    arg12: bool = KwArg(False, description="It is a store true argument.")
+    arg13: bool = KwArg(False, description="It is a store true argument.")
 
     # Store false argument (can be only optional keyword)
-    arg13: bool = KwArg(True, description="It is a store false argument.")
+    arg14: bool = KwArg(True, description="It is a store false argument.")
 
     # Subcommands
     subcommand1: Optional[Subcommand1] = Subcommand(description="It is a subcommand")
@@ -59,10 +60,11 @@ args = ["example",
         "--arg7", "example7",
         "--arg8", "example8",
         "--arg9", "example9",
-        "--arg10", "example2",
+        "--arg10", "example10",
         "--arg11", "example2",
-        "--arg12",
+        "--arg12", "example2",
         "--arg13",
+        "--arg14",
         "subcommand1",
         "--subarg", "sub_example"
         ]
