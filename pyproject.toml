@@ -1,0 +1,33 @@
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[project]
+name = "pydantic-argparse-new"
+version = "0.1.0"
+description = "Pydantic 2 argparse."
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+    {name = "oevergodofchaos", email = "vezonzzzzzz@gmail.com"}
+]
+
+keywords = [
+    "pydantic",
+    "argparse",
+    "parser",
+    "argparser",
+    "cli"
+]
+
+dependencies = [
+    "pydantic (>=2.11.3,<3.0.0)",
+    "rich (>=14.0.0,<15.0.0)"
+]
+
+packages = [
+    { include = "pydantic_argparse_new" }
+]
+
+[tool.poetry]
+package-mode = true

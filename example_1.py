@@ -1,12 +1,12 @@
-from pydantic_argparser_zero_tst import Arg, KwArg, Subcommand, parse
+from pydantic_argparse_new import Arg, KwArg, Subcommand, parse
 from pydantic import BaseModel, Field
 from typing import Optional, Literal, Union
 from enum import Enum
 
 
 class Choices(Enum):
-    example1 = 1
-    example2 = 2
+    choice1 = 1
+    choice2 = 2
 
 
 class Subcommand1(BaseModel):
@@ -37,8 +37,8 @@ class Commands(BaseModel):
     arg10: str | None = KwArg(..., description="It is a optional keyword argument.")
 
     # Choice arguments (can be positional or keyword)
-    arg11: Literal["example1", "example2"] = KwArg("example1", description="It is a choice keyword argument.")
-    arg12: Choices = KwArg(Choices.example1, description="It is a choice keyword argument.")
+    arg11: Literal["choice1", "choice2"] = KwArg("example1", description="It is a choice keyword argument.")
+    arg12: Choices = KwArg(Choices.choice1, description="It is a choice keyword argument.")
 
     # Store true argument (can be only optional keyword)
     arg13: bool = KwArg(False, description="It is a store true argument.")
@@ -61,8 +61,8 @@ args = ["example",
         "--arg8", "example8",
         "--arg9", "example9",
         "--arg10", "example10",
-        "--arg11", "example2",
-        "--arg12", "example2",
+        "--arg11", "choice1",
+        "--arg12", "choice2",
         "--arg13",
         "--arg14",
         "subcommand1",
