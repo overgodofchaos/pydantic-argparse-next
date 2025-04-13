@@ -133,7 +133,7 @@ class ArgumentBase(BaseModel):
         if str(type_).find("Optional") != -1:
             return True
         elif (types.UnionType is get_origin(type_) and
-                type(None) in get_args(type_)):
+                types.NoneType in get_args(type_)):
             return True
         else:
             return False
