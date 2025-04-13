@@ -37,14 +37,10 @@ class ExtraInfoSubcommand(BaseModel):
 
 
 class ParserConfig(BaseModel):
-    prog: str | None = None
-    usage: str | None = None
+    program_name: str | None = None
     description: str | None = None
     epilog: str | None = None
-    argument_default: Any | None = None
-    add_help: bool = True
-    allow_abbrev: bool = True
-    exit_on_error: bool = True
+    subcommand_required: bool = True
 
 
 class SubparserConfig(BaseModel):
@@ -67,18 +63,13 @@ def subparserconfig(
 
 
 def parserconfig(
-        prog: str = None,
-        usage: str = None,
+        program_name: str = None,
         description: str = None,
         epilog: str = None,
-        argument_default: Any = None,
-        add_help: bool = True,
-        allow_abbrev: bool = True,
-        exit_on_error: bool = True,
+        subcommand_required: bool = True
 ):
-    return ParserConfig(prog=prog, usage=usage, description=description, epilog=epilog,
-                        argument_default=argument_default, add_help=add_help,
-                        allow_abbrev=allow_abbrev, exit_on_error=exit_on_error)
+    return ParserConfig(program_name=program_name, description=description, epilog=epilog,
+                        subcommand_required=subcommand_required)
 
 
 class PydanticArgparserError(Exception):
@@ -190,7 +181,7 @@ class ArgumentBase(BaseModel):
         if self.action == "choice" and isinstance(self.default, Enum):
             default = "" if self.required else f"[Default: {str(self.default.name)}]"
         else:
-            if self.default is PydanticUndefined:
+            if self.default is PydanticUndefined and not self.required:
                 default = "[Default: None]"
             else:
                 default = "" if self.required else f"[Default: {str(self.default)}]"
@@ -266,9 +257,9 @@ class Subcommand(ArgumentBase):
 
 
 class Parser(BaseModel):
-    program_name: str = "Default program name"
-    program_description: str = "Default program description"
-    program_epilog: str = "Default program epilog"
+    # program_name: str = "Default program name"
+    # program_description: str = "Default program description"
+    # program_epilog: str = "Default program epilog"
 
     required_arguments: list[Argument] = []
     optional_arguments: list[Argument] = []
@@ -277,6 +268,56 @@ class Parser(BaseModel):
     subcommands: list[Subcommand] = []
     model: Type[pydantic.BaseModel]
     args: list[str]
+    subcommand: Subcommand | None = None
+
+    @property
+    def is_subcommand(self) -> bool:
+        if self.subcommand:
+            return True
+        else:
+            return False
+
+    @property
+    def subcommand_name(self) -> str:
+        if self.subcommand:
+            if self.subcommand.alias:
+                return self.subcommand.alias
+            else:
+                return self.subcommand.attribute_name
+        else:
+            raise PydanticArgparserError(f"Method subcommand_name available only for subcommand")
+
+    @property
+    def program_name(self) -> str:
+        if self.is_subcommand:
+            script_path = Path(sys.argv[0])
+            script_name = script_path.stem
+            return f"{script_name} {self.subcommand_name}"
+
+        if self._parserconfig.program_name:
+            return self._parserconfig.program_name
+        else:
+            script_path = Path(sys.argv[0])
+            script_name = script_path.stem
+            return script_name
+
+    @property
+    def program_description(self) -> str | None:
+        description = self._parserconfig.description
+        if not description and self.is_subcommand:
+            description = self.subcommand.description
+        return description
+
+    @property
+    def program_epilog(self) -> str | None:
+        return self._parserconfig.epilog
+
+    @property
+    def _parserconfig(self) -> ParserConfig:
+        if hasattr(self.model, "__parserconfig__"):
+            return self.model.__parserconfig__
+        else:
+            return ParserConfig()
 
     def model_post_init(self, context: Any) -> None:
         model = self.model
@@ -329,6 +370,10 @@ class Parser(BaseModel):
         script_path = Path(sys.argv[0])
         script_name = script_path.stem
         script_usage = script_name
+
+        if self.is_subcommand:
+            script_usage += f" {self.subcommand_name}"
+
         if len(self.required_arguments) > 0:
             script_usage += f" [REQ ARGS]"
         if len(self.optional_arguments) > 0:
@@ -343,12 +388,20 @@ class Parser(BaseModel):
         console = Console()
 
         # Program name and description
-        program = Panel(
-            self.program_description,
-            title_align="left",
-            title=self.program_name,
-            border_style="bold yellow"
-        )
+        if self.program_description:
+            program = Panel(
+                self.program_description,
+                title_align="left",
+                title=self.program_name,
+                border_style="bold yellow"
+            )
+        else:
+            program = Panel(
+                self.program_name,
+                title_align="left",
+                title=None,
+                border_style="bold yellow"
+            )
 
         console.print(program)
 
@@ -385,9 +438,9 @@ class Parser(BaseModel):
 
         for s in x:
             arguments = []
-            if self.required_arguments:
+            if s[0]:
                 arguments.append(get_help_panel(s[0], title="Required"))
-            if self.optional_arguments:
+            if s[1]:
                 arguments.append(get_help_panel(s[1], title="Optional"))
 
             if arguments:
@@ -411,14 +464,15 @@ class Parser(BaseModel):
             console.print(subcommands)
 
         # Epilog
-        program = Panel(
-            self.program_epilog,
-            title_align="left",
-            title=None,
-            border_style="bold yellow"
-        )
+        if self.program_epilog:
+            epilog = Panel(
+                self.program_epilog,
+                title_align="left",
+                title=None,
+                border_style="bold yellow"
+            )
 
-        console.print(program)
+            console.print(epilog)
 
         sys.exit(0)
 
@@ -426,10 +480,7 @@ class Parser(BaseModel):
         schema = {}
         args = self.args
 
-        # Help
-        if find_any(args, ["--help", "-H"]) != -1:
-            self.help()
-
+        # Separate subcommands
         if len(self.subcommands) > 0:
             subcommand_position = find_any(args, [x.attribute_name for x in self.subcommands])
             if subcommand_position > -1:
@@ -438,6 +489,25 @@ class Parser(BaseModel):
                 subcommand_name = self.args[subcommand_position]
             else:
                 raise PydanticArgparserError("Subcommand required")
+
+        # Help
+        if find_any(args, ["--help", "-H"]) != -1:
+            self.help()
+
+        try:
+            # noinspection PyUnboundLocalVariable
+            if find_any(subcommand_args, ["--help", "-H"]) != -1:
+                for subcommand in self.subcommands:
+                    # noinspection PyUnboundLocalVariable
+                    if subcommand.attribute_name == subcommand_name:
+                        Parser(
+                            model=subcommand.type,
+                            args=subcommand_args,
+                            subcommand=subcommand
+                        ).resolve()
+            sys.exit(1)
+        except NameError:
+            pass
 
         # Positional arguments
         for argument in self.required_arguments + self.optional_arguments:
@@ -494,14 +564,15 @@ class Parser(BaseModel):
                 # noinspection PyUnboundLocalVariable
                 schema[subcommand.attribute_name] = Parser(
                     model=subcommand.type,
-                    args=subcommand_args
-                ).resolve(subcommand_=True)
+                    args=subcommand_args,
+                    subcommand=subcommand
+                ).resolve()
             else:
                 schema[subcommand.attribute_name] = None
 
         # print(schema)
 
-        if subcommand_:
+        if self.is_subcommand:
             return schema
         else:
             return self.model(**schema)
