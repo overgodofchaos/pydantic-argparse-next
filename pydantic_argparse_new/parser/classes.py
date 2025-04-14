@@ -97,6 +97,15 @@ class ArgumentBase(BaseModel):
         pass
 
     @property
+    def name(self):
+        if isinstance(self, Argument | Subcommand):
+            return self.attribute_name
+        elif isinstance(self, KeywordArgument):
+            return self.keyword_arguments_names[0]
+        else:
+            raise TypeError
+
+    @property
     def alias(self) -> str | None:
         return self.__filed_info__.alias
 
@@ -214,7 +223,12 @@ class ArgumentBase(BaseModel):
         if get_origin(self.type) is Literal:
             return x
         elif issubclass(self.type, Enum):
-            return self.type[x]
+            try:
+                return self.type[x]
+            except KeyError:
+                memders = self.type.__members__.keys()
+                raise PydanticArgparserError(f"Input should be in [{', '.join(memders)}]"
+                                             f" for {self.name}, but {x} was given")
         else:
             raise PydanticArgparserError(f"resolve_choice method only for choice argument")
 
