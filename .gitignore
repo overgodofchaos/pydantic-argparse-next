@@ -1,3 +1,5 @@
-*test*
+mytest*
 .idea
 venv.bat
+!tests/
+!tests/test*

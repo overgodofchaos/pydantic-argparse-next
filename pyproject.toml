@@ -31,3 +31,7 @@ packages = [
 
 [tool.poetry]
 package-mode = true
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.5"
+

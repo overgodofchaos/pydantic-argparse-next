@@ -2,15 +2,16 @@ from pydantic import BaseModel, Field
 from pydantic_core import PydanticUndefined
 # noinspection PyUnresolvedReferences,PyProtectedMember
 from pydantic.fields import FieldInfo
-from typing import Type, Any, get_args, get_origin, Literal
+from typing import Type, Any, get_args, get_origin, Literal, TypeVar
 import typing
 from .classes import ExtraInfoArgument, ExtraInfoSubcommand, ExtraInfoKeywordArgument
 from .classes import Argument, KeywordArgument, Subcommand, Parser
 import sys
 
+T = TypeVar('T', bound=BaseModel)
 
-def parse(model: Type[BaseModel] | BaseModel, args: list[str] = None) -> BaseModel | None:
 
+def parse(model: Type[T], args: list[str] = None) -> T:
     if args is None:
         args = sys.argv
         args_ = []
@@ -29,10 +30,3 @@ def parse(model: Type[BaseModel] | BaseModel, args: list[str] = None) -> BaseMod
     args_model = parser.resolve()
 
     return args_model
-
-
-
-
-
-
-    

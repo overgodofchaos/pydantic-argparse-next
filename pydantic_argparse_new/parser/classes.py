@@ -1,5 +1,5 @@
 import pydantic
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from pydantic_core import PydanticUndefined
 # noinspection PyUnresolvedReferences,PyProtectedMember
 from pydantic.fields import FieldInfo
@@ -20,8 +20,9 @@ import types
 
 # noinspection PyRedeclaration
 class BaseModel(BaseModel):
-    class Config:
-        validate_assignment = True
+    model_config = ConfigDict(
+        validate_assignment=True,
+    )
 
 
 class ExtraInfoArgument(BaseModel):
@@ -247,7 +248,12 @@ class KeywordArgument(ArgumentBase):
             alias = self.alias.replace("_", "-")
             if self.action == "store_false":
                 alias = f"no-{alias}"
-            names.append(f"--{alias}")
+                names.append(f"--{alias}")
+            else:
+                if alias.startswith("-") is False:
+                    names.append(f"--{alias}")
+                else:
+                    names.append(f"{alias}")
 
         return names
 
@@ -480,8 +486,13 @@ class Parser(BaseModel):
         schema = {}
         args = self.args
 
+        # Help
+        if find_any(args, ["--help", "-H"]) != -1:
+            self.help()
+
         # Separate subcommands
         if len(self.subcommands) > 0:
+            print(f"Subcommands: {self.subcommands}")
             subcommand_position = find_any(args, [x.attribute_name for x in self.subcommands])
             if subcommand_position > -1:
                 args = self.args[:subcommand_position]
@@ -490,10 +501,7 @@ class Parser(BaseModel):
             else:
                 raise PydanticArgparserError("Subcommand required")
 
-        # Help
-        if find_any(args, ["--help", "-H"]) != -1:
-            self.help()
-
+        # Help subcommand
         try:
             # noinspection PyUnboundLocalVariable
             if find_any(subcommand_args, ["--help", "-H"]) != -1:
@@ -505,14 +513,13 @@ class Parser(BaseModel):
                             args=subcommand_args,
                             subcommand=subcommand
                         ).resolve()
-            sys.exit(1)
         except NameError:
             pass
 
         # Positional arguments
         for argument in self.required_arguments + self.optional_arguments:
             name = argument.attribute_name if argument.alias is None else argument.alias
-            if args[0].startswith("-") is False:
+            if len(args) > 0 and args[0].startswith("-") is False:
                 if argument.action == "choice":
                     schema[name] = argument.resolve_choice(args[0])
                 else:
@@ -530,10 +537,11 @@ class Parser(BaseModel):
         # Keyword argumwnts
         for argument in self.required_keyword_arguments + self.optional_keyword_arguments:
             argument_position = find_any(args, argument.keyword_arguments_names)
+            print(argument.keyword_arguments_names)
 
             if argument_position == -1:
                 if argument.required:
-                    raise PydanticArgparserError(f"Option {argument.keyword_arguments_names[0]} is required")
+                    raise PydanticArgparserError(f"Keyword argument {argument.keyword_arguments_names[0]} is required")
                 continue
 
             name = argument.attribute_name if argument.alias is None else argument.alias
