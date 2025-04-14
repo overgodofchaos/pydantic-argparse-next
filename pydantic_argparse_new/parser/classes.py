@@ -247,7 +247,10 @@ class KeywordArgument(ArgumentBase):
         if self.alias is not None:
             alias = self.alias.replace("_", "-")
             if self.action == "store_false":
-                alias = f"no-{alias}"
+                if alias.startswith("--"):
+                    alias = f"no-{alias[2:]}"
+                elif alias.startswith("-"):
+                    alias = f"no-{alias[1:]}"
                 names.append(f"--{alias}")
             else:
                 if alias.startswith("-") is False:
@@ -541,7 +544,6 @@ class Parser(BaseModel):
         # Keyword argumwnts
         for argument in self.required_keyword_arguments + self.optional_keyword_arguments:
             argument_position = find_any(args, argument.keyword_arguments_names)
-            print(argument.keyword_arguments_names)
 
             if argument_position == -1:
                 if argument.required:

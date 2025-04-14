@@ -12,8 +12,6 @@ def test_argument_keyword_required():
         args=args,
     )
 
-    
-
     assert result.a == "test"
 
 
@@ -28,8 +26,6 @@ def test_argument_keyword_required_2():
         args=args,
     )
 
-    
-
     assert result.a == "test"
 
 
@@ -38,6 +34,20 @@ def test_argument_keyword_required_3():
         a: str = pa.KwArg(..., description="temp", alias="-A")
 
     args = ["-A", "test"]
+
+    result = pa.parse(
+        model=Temp,
+        args=args,
+    )
+
+    assert result.a == "test"
+
+
+def test_argument_keyword_required_4():
+    class Temp(BaseModel):
+        a: str = Field(..., description="temp")
+
+    args = ["--a", "test"]
 
     result = pa.parse(
         model=Temp,

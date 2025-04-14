@@ -12,8 +12,6 @@ def test_argument_positional_required():
         args=args,
     )
 
-    
-
     assert result.a == "test"
 
 
