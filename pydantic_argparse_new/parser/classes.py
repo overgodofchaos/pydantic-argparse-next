@@ -507,6 +507,9 @@ class Parser(BaseModel):
         if find_any(args, ["--help", "-H"]) != -1:
             self.help()
 
+        subcommand_args = []
+        subcommand_name = None
+
         # Separate subcommands
         if len(self.subcommands) > 0:
             subcommand_position = find_any(args, [x.attribute_name for x in self.subcommands])
@@ -518,8 +521,6 @@ class Parser(BaseModel):
                 if self._parserconfig.subcommand_required:
                     raise PydanticArgparserError("Subcommand required")
                 else:
-                    subcommand_args = []
-                    subcommand_name = None
                     pass
 
         # Help subcommand
@@ -569,12 +570,18 @@ class Parser(BaseModel):
             match argument.action:
                 case "normal":
                     schema[name] = args[argument_position + 1]
+                    args.pop(argument_position)
+                    args.pop(argument_position)
                 case "store_true":
                     schema[name] = True
+                    args.pop(argument_position)
                 case "store_false":
                     schema[name] = False
+                    args.pop(argument_position)
                 case "choice":
                     schema[name] = argument.resolve_choice(args[argument_position + 1])
+                    args.pop(argument_position)
+                    args.pop(argument_position)
 
         # Processing optional annotation
         for argument in self.optional_arguments + self.optional_keyword_arguments:
@@ -594,6 +601,11 @@ class Parser(BaseModel):
                 ).resolve()
             else:
                 schema[subcommand.attribute_name] = None
+
+        # Excess keyword arguments
+        for arg in args:
+            if arg != subcommand_name:
+                raise PydanticArgparserError(f"Unrecognized argument: {arg}")
 
         # print(schema)
 
