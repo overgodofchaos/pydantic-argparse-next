@@ -12,8 +12,6 @@ def test_argument_positional_optional():
         args=args,
     )
 
-    
-
     assert result.a == "test"
 
 
@@ -27,8 +25,6 @@ def test_argument_positional_optional_not_defined():
         model=Temp,
         args=args,
     )
-
-    
 
     assert result.a is None
 
@@ -44,8 +40,6 @@ def test_argument_positional_optional_not_defined_2():
         args=args,
     )
 
-    
-
     assert result.a is None
 
 
@@ -60,8 +54,6 @@ def test_argument_positional_optional_not_defined_3():
         args=args,
     )
 
-    
-
     assert result.a is None
 
 
@@ -75,8 +67,6 @@ def test_argument_positional_optional_not_defined_4():
         model=Temp,
         args=args,
     )
-
-    
 
     assert result.a is None
 

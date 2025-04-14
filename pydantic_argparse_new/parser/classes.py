@@ -492,14 +492,18 @@ class Parser(BaseModel):
 
         # Separate subcommands
         if len(self.subcommands) > 0:
-            print(f"Subcommands: {self.subcommands}")
             subcommand_position = find_any(args, [x.attribute_name for x in self.subcommands])
             if subcommand_position > -1:
                 args = self.args[:subcommand_position]
                 subcommand_args = self.args[subcommand_position + 1:]
                 subcommand_name = self.args[subcommand_position]
             else:
-                raise PydanticArgparserError("Subcommand required")
+                if self._parserconfig.subcommand_required:
+                    raise PydanticArgparserError("Subcommand required")
+                else:
+                    subcommand_args = []
+                    subcommand_name = None
+                    pass
 
         # Help subcommand
         try:
@@ -566,10 +570,7 @@ class Parser(BaseModel):
 
         # Subcommands
         for subcommand in self.subcommands:
-            # noinspection PyUnboundLocalVariable
             if subcommand.attribute_name == subcommand_name:
-                # noinspection PyUnboundLocalVariable,PyTypeChecker
-                # noinspection PyUnboundLocalVariable
                 schema[subcommand.attribute_name] = Parser(
                     model=subcommand.type,
                     args=subcommand_args,
