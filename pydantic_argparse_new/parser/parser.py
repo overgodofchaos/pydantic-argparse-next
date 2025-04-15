@@ -6,7 +6,7 @@ from pydantic.fields import FieldInfo
 from typing import Any, Type
 # noinspection PyUnresolvedReferences
 from typing import Literal, Optional, Union
-from typing import Type, Any, get_args, get_origin
+from typing import Type, Any, get_args, get_origin, cast
 from .utils import find_any
 from rich.console import Console, Group
 from rich.panel import Panel
@@ -87,15 +87,15 @@ class Parser(BaseModel):
     def program_epilog(self) -> str | None:
         return self._parserconfig.epilog
 
-    @property
-    def subcommand_destionation(self) -> str:
-        name = self._parserconfig.subcommand_destination
-        if name.startswith("__") and name.endswith("__"):
-            return name
-        elif name.startswith("_") or name.endswith("_"):
-            raise PydanticArgparserError(f"Incorrect subcommand_destionation {name}")
-        else:
-            return f"__{name}__"
+    # @property
+    # def subcommand_destionation(self) -> str:
+    #     name = self._parserconfig.subcommand_destination
+    #     if name.startswith("__") and name.endswith("__"):
+    #         return name
+    #     elif name.startswith("_") or name.endswith("_"):
+    #         raise PydanticArgparserError(f"Incorrect subcommand_destionation {name}")
+    #     else:
+    #         return f"__{name}__"
 
     @property
     def _parserconfig(self) -> ParserConfig:
@@ -389,20 +389,18 @@ class Parser(BaseModel):
 
         model = self.model(**schema)
         if subcommand_name:
-            destination = self.subcommand_destionation
             setattr(
                 model,
-                destination,
+                "__subcommand__",
                 SelectedSubcommand(
                     name=subcommand_name,
                     value=getattr(model, subcommand_name)
                 )
             )
         else:
-            destination = self.subcommand_destionation
             setattr(
                 model,
-                destination,
+                "__subcommand__",
                 None
             )
 
