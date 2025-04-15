@@ -43,46 +43,6 @@ def test_help_general():
     assert exc_info.value.code == 0
 
 
-def test_help_subcomands(capsys):
-    class SubSubCommand1(BaseModel):
-        h: str = pa.KwArg("test", description="test")
-
-    class SubSubCommand2(BaseModel):
-        i: str = pa.KwArg("test", description="test")
-
-    class SubCommand1(BaseModel):
-        d: str = pa.KwArg("test", description="test")
-        e: Optional[SubSubCommand1] = pa.Subcommand(..., description="test")
-        f: Optional[SubSubCommand2] = pa.Subcommand(..., description="test")
-
-    class SubCommand2(BaseModel):
-        g: str = pa.KwArg("test", description="test")
-
-    class Test(BaseModel):
-        a: str = pa.Arg(None, description="test")
-        b: Optional[SubCommand1] = pa.Subcommand(..., description="test")
-        c: Optional[SubCommand1] = pa.Subcommand(..., description="test")
-
-    args = [
-        "b",
-        "--help"
-    ]
-
-    output = read_output(Test, args, capsys).out
-
-    assert "pytest b" in output
-
-    args = [
-        "b",
-        "e",
-        "--help"
-    ]
-
-    output = read_output(Test, args, capsys).out
-
-    assert "pytest b e" in output
-
-
 def test_parserconfig(capsys):
     class Test(BaseModel):
         __parserconfig__ = pa.parserconfig(
@@ -99,4 +59,71 @@ def test_parserconfig(capsys):
     assert "Test program name" in output
     assert "Test program description" in output
     assert "Test program epilog" in output
+
+
+def test_help_subcomands(capsys):
+    class SubSubCommand1(BaseModel):
+        __parserconfig__ = pa.parserconfig(
+            program_name="SS1-N",
+            description="SS1-D",
+            epilog="SS1-E",
+        )
+        h: str = pa.KwArg("test", description="test")
+
+    class SubSubCommand2(BaseModel):
+        __parserconfig__ = pa.parserconfig(
+            program_name="SS2-N",
+            description="SS2-D",
+            epilog="SS2-E",
+        )
+        i: str = pa.KwArg("test", description="test")
+
+    class SubCommand1(BaseModel):
+        __parserconfig__ = pa.parserconfig(
+            program_name="S1-N",
+            description="S1-D",
+            epilog="S1-E",
+        )
+        d: str = pa.KwArg("test", description="test")
+        e: Optional[SubSubCommand1] = pa.Subcommand(..., description="test")
+        f: Optional[SubSubCommand2] = pa.Subcommand(..., description="test")
+
+    class SubCommand2(BaseModel):
+        __parserconfig__ = pa.parserconfig(
+            program_name="S2-N",
+            description="S2-D",
+            epilog="S2-E",
+        )
+        g: str = pa.KwArg("test", description="test")
+
+    class Test(BaseModel):
+        a: str = pa.Arg(None, description="test")
+        b: Optional[SubCommand1] = pa.Subcommand(..., description="test")
+        c: Optional[SubCommand1] = pa.Subcommand(..., description="test")
+
+    args = [
+        "b",
+        "--help"
+    ]
+
+    output = read_output(Test, args, capsys).out
+
+    assert "pytest b" in output
+    assert "S1-N" not in output
+    assert "S1-D" in output
+    assert "S1-E" in output
+
+    args = [
+        "b",
+        "e",
+        "--help"
+    ]
+
+    output = read_output(Test, args, capsys).out
+
+    assert "pytest b e" in output
+    assert "SS1-N" not in output
+    assert "SS1-D" in output
+    assert "SS1-E" in output
+
 
