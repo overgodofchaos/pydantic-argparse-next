@@ -18,7 +18,7 @@ from pathlib import Path
 import types
 from .classes import Argument, KeywordArgument, Subcommand, PydanticArgparserError
 from .classes import ParserConfig, ExtraInfoKeywordArgument
-from .classes import ExtraInfoArgument, ExtraInfoSubcommand
+from .classes import ExtraInfoArgument, ExtraInfoSubcommand, SelectedSubcommand
 
 
 # noinspection PyRedeclaration
@@ -86,6 +86,16 @@ class Parser(BaseModel):
     @property
     def program_epilog(self) -> str | None:
         return self._parserconfig.epilog
+
+    @property
+    def subcommand_destionation(self) -> str:
+        name = self._parserconfig.subcommand_destination
+        if name.startswith("__") and name.endswith("__"):
+            return name
+        elif name.startswith("_") or name.endswith("_"):
+            raise PydanticArgparserError(f"Incorrect subcommand_destionation {name}")
+        else:
+            return f"__{name}__"
 
     @property
     def _parserconfig(self) -> ParserConfig:
@@ -255,7 +265,7 @@ class Parser(BaseModel):
 
             console.print(epilog)
 
-    def resolve(self, subcommand_: bool = False) -> BaseModel | dict:
+    def resolve(self) -> BaseModel:
         schema = {}
         args = self.args
 
@@ -290,6 +300,8 @@ class Parser(BaseModel):
                             subcommand=subcommand,
                             prefix=self.get_prefix()
                         ).resolve()
+                # noinspection PyTypeChecker,PyUnreachableCode
+                return  # For pytest
         except NameError:
             pass
 
@@ -371,7 +383,27 @@ class Parser(BaseModel):
 
         # print(schema)
 
-        if self.is_subcommand:
-            return schema
+        # if self.is_subcommand:
+        #     return schema
+        # else:
+
+        model = self.model(**schema)
+        if subcommand_name:
+            destination = self.subcommand_destionation
+            setattr(
+                model,
+                destination,
+                SelectedSubcommand(
+                    name=subcommand_name,
+                    value=getattr(model, subcommand_name)
+                )
+            )
         else:
-            return self.model(**schema)
+            destination = self.subcommand_destionation
+            setattr(
+                model,
+                destination,
+                None
+            )
+
+        return model

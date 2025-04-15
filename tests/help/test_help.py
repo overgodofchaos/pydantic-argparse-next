@@ -12,7 +12,7 @@ def read_output(model, args, capsys):
     return capsys.readouterr()
 
 
-def test_help():
+def test_help_general():
     class Choices(Enum):
         choice1 = 0
         choice2 = 1
@@ -43,7 +43,7 @@ def test_help():
     assert exc_info.value.code == 0
 
 
-def test_help_2(capsys):
+def test_help_subcomands(capsys):
     class SubSubCommand1(BaseModel):
         h: str = pa.KwArg("test", description="test")
 
@@ -83,4 +83,20 @@ def test_help_2(capsys):
     assert "pytest b e" in output
 
 
+def test_parserconfig(capsys):
+    class Test(BaseModel):
+        __parserconfig__ = pa.parserconfig(
+            program_name="Test program name",
+            description="Test program description",
+            epilog="Test program epilog",
+        )
+
+        a: str = pa.KwArg(..., description="test")
+        b: str = pa.KwArg(None, description="test")
+
+    output = read_output(Test, ["--help"], capsys).out
+
+    assert "Test program name" in output
+    assert "Test program description" in output
+    assert "Test program epilog" in output
 

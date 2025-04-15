@@ -44,6 +44,8 @@ def test_argument_subcommand(config_model):
     assert result.subcommand1.c == "test3"
     assert result.subcommand1.d == "test4"
     assert result.subcommand2 is None
+    assert result.__subcommand__.value.c == "test3"
+    assert result.__subcommand__.value.d == "test4"
 
 
 def test_argument_subcommand_not_defined(config_model):
