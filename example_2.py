@@ -77,8 +77,12 @@ args = ["example",
         ]
 
 
-commands = parse(Commands)
+# commands = parse(Commands)
 
 # print(commands)
 #
 # commands = parse(Commands, ["--help"])
+
+args = ["subcommand1", "--help"]
+
+commands = parse(Commands, args)

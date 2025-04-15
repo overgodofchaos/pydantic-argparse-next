@@ -41,6 +41,7 @@ class Parser(BaseModel):
     model: Type[pydantic.BaseModel]
     args: list[str]
     subcommand: Subcommand | None = None
+    prefix: str | None = None
 
     @property
     def is_subcommand(self) -> bool:
@@ -60,18 +61,20 @@ class Parser(BaseModel):
             raise PydanticArgparserError(f"Method subcommand_name available only for subcommand")
 
     @property
-    def program_name(self) -> str:
+    def _script_name(self) -> str:
+        script_path = Path(sys.argv[0])
+        script_name = script_path.stem
+        return script_name
+
+    @property
+    def name(self) -> str:
         if self.is_subcommand:
-            script_path = Path(sys.argv[0])
-            script_name = script_path.stem
-            return f"{script_name} {self.subcommand_name}"
+            return f"{self.prefix} {self.subcommand_name}"
 
         if self._parserconfig.program_name:
             return self._parserconfig.program_name
         else:
-            script_path = Path(sys.argv[0])
-            script_name = script_path.stem
-            return script_name
+            return self._script_name
 
     @property
     def program_description(self) -> str | None:
@@ -90,6 +93,12 @@ class Parser(BaseModel):
             return self.model.__parserconfig__
         else:
             return ParserConfig()
+
+    def get_prefix(self):
+        if self.is_subcommand:
+            return f"{self.prefix} {self.subcommand_name}"
+        else:
+            return f"{self._script_name}"
 
     def model_post_init(self, context: Any) -> None:
         model = self.model
@@ -164,12 +173,12 @@ class Parser(BaseModel):
             program = Panel(
                 self.program_description,
                 title_align="left",
-                title=self.program_name,
+                title=self.name,
                 border_style="bold yellow"
             )
         else:
             program = Panel(
-                self.program_name,
+                self.name,
                 title_align="left",
                 title=None,
                 border_style="bold yellow"
@@ -252,25 +261,20 @@ class Parser(BaseModel):
         schema = {}
         args = self.args
 
-        # Help
-        if find_any(args, ["--help", "-H"]) != -1:
-            self.help()
-
         subcommand_args = []
         subcommand_name = None
 
         # Separate subcommands
         if len(self.subcommands) > 0:
-            subcommand_position = find_any(args, [x.attribute_name for x in self.subcommands])
+            subcommand_position = find_any(self.args, [x.attribute_name for x in self.subcommands])
             if subcommand_position > -1:
                 args = self.args[:subcommand_position]
                 subcommand_args = self.args[subcommand_position + 1:]
                 subcommand_name = self.args[subcommand_position]
-            else:
-                if self._parserconfig.subcommand_required:
-                    raise PydanticArgparserError("Subcommand required")
-                else:
-                    pass
+
+        # Help
+        if find_any(args, ["--help", "-H"]) != -1:
+            self.help()
 
         # Help subcommand
         try:
@@ -282,10 +286,17 @@ class Parser(BaseModel):
                         Parser(
                             model=subcommand.type,
                             args=subcommand_args,
-                            subcommand=subcommand
+                            subcommand=subcommand,
+                            prefix=self.get_prefix()
                         ).resolve()
         except NameError:
             pass
+
+        # Subcommand required check
+        if len(self.subcommands) > 0:
+            subcommand_position = find_any(self.args, [x.attribute_name for x in self.subcommands])
+            if subcommand_position == -1 and self._parserconfig.subcommand_required:
+                raise PydanticArgparserError("Subcommand required")
 
         # Positional arguments
         for argument in self.required_arguments + self.optional_arguments:
@@ -346,7 +357,8 @@ class Parser(BaseModel):
                 schema[subcommand.attribute_name] = Parser(
                     model=subcommand.type,
                     args=subcommand_args,
-                    subcommand=subcommand
+                    subcommand=subcommand,
+                    prefix=self.get_prefix()
                 ).resolve()
             else:
                 schema[subcommand.attribute_name] = None
