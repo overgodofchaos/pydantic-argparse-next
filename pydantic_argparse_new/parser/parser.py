@@ -374,7 +374,10 @@ class Parser(BaseModel):
                     prefix=self.get_prefix()
                 ).resolve()
             else:
-                schema[subcommand.attribute_name] = None
+                if subcommand.optional_annotation:
+                    schema[subcommand.attribute_name] = None
+                else:
+                    pass
 
         # Excess keyword arguments
         for arg in args:

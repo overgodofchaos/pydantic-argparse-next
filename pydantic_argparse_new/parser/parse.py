@@ -5,7 +5,7 @@ from pydantic.fields import FieldInfo
 from typing import Type, Any, get_args, get_origin, Literal, TypeVar
 import typing
 from .classes import ExtraInfoArgument, ExtraInfoSubcommand, ExtraInfoKeywordArgument
-from .classes import Argument, KeywordArgument, Subcommand
+from .classes import Argument, KeywordArgument, Subcommand, ParserConfig
 from .parser import Parser
 import sys
 
@@ -13,7 +13,13 @@ import sys
 T = TypeVar('T', bound=BaseModel)
 
 
-def parse(model: Type[T], args: list[str] = None) -> T:
+def parse(
+        model: Type[T],
+        program_name: str = None,
+        description: str = None,
+        epilog: str = None,
+        args: list[str] = None
+) -> T:
     if args is None:
         args = sys.argv
         args_ = []
@@ -26,8 +32,19 @@ def parse(model: Type[T], args: list[str] = None) -> T:
         args_ = args
 
     parser = Parser(model=model, args=args_)
+    if any([program_name, description, epilog]):
+        if hasattr(model, "__parserconfig__"):
+            if not isinstance(model.__parserconfig__, ParserConfig):
+                model.__parserconfig__ = ParserConfig()
+        else:
+            model.__parserconfig__ = ParserConfig()
 
-    # print(parser)
+        if program_name:
+            model.__parserconfig__.program_name = program_name
+        if description:
+            model.__parserconfig__.description = description
+        if epilog:
+            model.__parserconfig__.epilog = epilog
 
     args_model = parser.resolve()
 
