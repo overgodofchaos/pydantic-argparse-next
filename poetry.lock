@@ -75,6 +75,18 @@ files = [
 ]
 
 [[package]]
+name = "mx-logger"
+version = "1.0.0"
+description = "mx logger"
+optional = false
+python-versions = ">=3.11"
+groups = ["dev"]
+files = [
+    {file = "mx_logger-1.0.0-py3-none-any.whl", hash = "sha256:9f473e1f67c1dc3c22552e62234946637d82ca11868fae0692f8a92aa2607c51"},
+    {file = "mx_logger-1.0.0.tar.gz", hash = "sha256:faacd1b734602d058ed87fd292fd8f45325595b9c7fe5d514db7f9eda3c16856"},
+]
+
+[[package]]
 name = "packaging"
 version = "24.2"
 description = "Core utilities for Python packages"
@@ -321,4 +333,4 @@ typing-extensions = ">=4.12.0"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11"
-content-hash = "789ab69a2fdc125f9740c43033040f8184a553836b10fe407f45a4d961e09fe4"
+content-hash = "d4392419a5ff68002586aaf6df3336aae5b7eafc8a05dd83f5dc5bd4cf8892b6"

@@ -6,3 +6,4 @@ from enum import Enum
 import pytest
 import re
 from unittest.mock import patch
+from mx_logger import logger

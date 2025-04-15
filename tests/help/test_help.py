@@ -1,20 +1,18 @@
 from ..testsimport import *
 
-#
-# def test_test(capsys):
-#     class Test(BaseModel):
-#         a: str = pa.KwArg(..., description="test")
-#
-#     args = ["--help"]
-#
-#     with patch("sys.exit") as mocked_exit:
-#         result = pa.parse(Test, args)
-#         mocked_exit.assert_called_once()
-#
-#     captured = capsys.readouterr()
+
+log = logger.get_logger("test_help")
 
 
-def test_help(capsys):
+def read_output(model, args, capsys):
+    with patch("sys.exit") as mocked_exit:
+        result = pa.parse(model, args)
+        # mocked_exit.assert_called_once()
+
+    return capsys.readouterr()
+
+
+def test_help():
     class Choices(Enum):
         choice1 = 0
         choice2 = 1
@@ -43,3 +41,46 @@ def test_help(capsys):
         pa.parse(Test, args)
 
     assert exc_info.value.code == 0
+
+
+def test_help_2(capsys):
+    class SubSubCommand1(BaseModel):
+        h: str = pa.KwArg("test", description="test")
+
+    class SubSubCommand2(BaseModel):
+        i: str = pa.KwArg("test", description="test")
+
+    class SubCommand1(BaseModel):
+        d: str = pa.KwArg("test", description="test")
+        e: Optional[SubSubCommand1] = pa.Subcommand(..., description="test")
+        f: Optional[SubSubCommand2] = pa.Subcommand(..., description="test")
+
+    class SubCommand2(BaseModel):
+        g: str = pa.KwArg("test", description="test")
+
+    class Test(BaseModel):
+        a: str = pa.Arg(None, description="test")
+        b: Optional[SubCommand1] = pa.Subcommand(..., description="test")
+        c: Optional[SubCommand1] = pa.Subcommand(..., description="test")
+
+    args = [
+        "b",
+        "--help"
+    ]
+
+    output = read_output(Test, args, capsys).out
+
+    assert "pytest b" in output
+
+    args = [
+        "b",
+        "e",
+        "--help"
+    ]
+
+    output = read_output(Test, args, capsys).out
+
+    assert "pytest b e" in output
+
+
+

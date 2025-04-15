@@ -165,7 +165,7 @@ class Parser(BaseModel):
             script_usage += f" [SUBCOMMAND]"
         return script_usage
 
-    def help(self):
+    def show_help(self):
         console = Console()
 
         # Program name and description
@@ -255,8 +255,6 @@ class Parser(BaseModel):
 
             console.print(epilog)
 
-        sys.exit(0)
-
     def resolve(self, subcommand_: bool = False) -> BaseModel | dict:
         schema = {}
         args = self.args
@@ -274,7 +272,10 @@ class Parser(BaseModel):
 
         # Help
         if find_any(args, ["--help", "-H"]) != -1:
-            self.help()
+            self.show_help()
+            sys.exit(0)
+            # noinspection PyTypeChecker,PyUnreachableCode
+            return  # For pytest
 
         # Help subcommand
         try:
