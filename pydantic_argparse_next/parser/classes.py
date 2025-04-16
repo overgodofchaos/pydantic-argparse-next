@@ -175,8 +175,6 @@ class ArgumentBase(BaseModel):
                 return "store_true"
             elif self.default is True:
                 return "store_false"
-            else:
-                raise PydanticArgparserError("Default for boolean argument must be True or False")
         if get_origin(self.type) is Literal or issubclass(self.type, Enum):
             return "choice"
 
@@ -244,19 +242,19 @@ class ArgumentBase(BaseModel):
 class Argument(ArgumentBase):
 
     def argument_validate(self):
-        match self.action:
-            case "store_false" | "store_true":
+        match self.type.__name__:
+            case "bool":
                 raise PydanticArgparserError("Positional argument can't be a boolean (store true or store false)")
 
 
 class KeywordArgument(ArgumentBase):
 
     def argument_validate(self):
-        if (self.type is bool and
-                (self.default is not False and
-                 self.default is not True)):
-            print(self.default, self.attribute_name)
-            raise PydanticArgparserError("Boolean argument must have a default boolean value")
+        match self.type.__name__:
+            case "bool":
+                if self.default is not False and self.default is not True:
+                    raise PydanticArgparserError("Boolean argument must have a default boolean value"
+                                                 " (False for store true or True for store false)")
 
     @property
     def keyword_arguments_names(self):

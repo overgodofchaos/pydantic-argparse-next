@@ -103,7 +103,8 @@ def test_store_positional_error_2():
 
     with pytest.raises(
             pa_classes.PydanticArgparserError,
-            match="Boolean argument must have a default boolean value"
+            match=re.escape("Boolean argument must have a default boolean value"
+                            " (False for store true or True for store false)")
     ):
         result = pa.parse(Temp, args=args)
 
