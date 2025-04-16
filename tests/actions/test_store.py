@@ -7,7 +7,7 @@ def test_store_true_true():
 
     args = ["--a"]
 
-    result = pa.parse(Temp, args)
+    result = pa.parse(Temp, args=args)
 
     assert result.a is True
 
@@ -18,7 +18,7 @@ def test_store_true_true_2():
 
     args = ["-A"]
 
-    result = pa.parse(Temp, args)
+    result = pa.parse(Temp, args=args)
 
     assert result.a is True
 
@@ -29,7 +29,7 @@ def test_store_true_false():
 
     args = []
 
-    result = pa.parse(Temp, args)
+    result = pa.parse(Temp, args=args)
 
     assert result.a is False
 
@@ -40,7 +40,7 @@ def test_store_false_false():
 
     args = ["--no-a"]
 
-    result = pa.parse(Temp, args)
+    result = pa.parse(Temp, args=args)
 
     assert result.a is False
 
@@ -51,7 +51,7 @@ def test_store_false_false_2():
 
     args = ["--no-A"]
 
-    result = pa.parse(Temp, args)
+    result = pa.parse(Temp, args=args)
 
     assert result.a is False
 
@@ -62,7 +62,7 @@ def test_store_false_true():
 
     args = []
 
-    result = pa.parse(Temp, args)
+    result = pa.parse(Temp, args=args)
 
     assert result.a is True
 
@@ -77,7 +77,7 @@ def test_store_required_error():
         pa_classes.PydanticArgparserError,
         match="Boolean argument must have a default boolean value"
     ):
-        result = pa.parse(Temp, args)
+        result = pa.parse(Temp, args=args)
 
 
 def test_store_positional_error():
@@ -90,7 +90,7 @@ def test_store_positional_error():
             pa_classes.PydanticArgparserError,
             match="Positional argument can't be a boolean"
     ):
-        result = pa.parse(Temp, args)
+        result = pa.parse(Temp, args=args)
 
 
 def test_store_positional_error_2():
@@ -103,5 +103,5 @@ def test_store_positional_error_2():
             pa_classes.PydanticArgparserError,
             match="Positional argument can't be a boolean"
     ):
-        result = pa.parse(Temp, args)
+        result = pa.parse(Temp, args=args)
 

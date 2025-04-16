@@ -6,7 +6,7 @@ log = logger.get_logger("test_help")
 
 def read_output(model, args, capsys):
     with patch("sys.exit") as mocked_exit:
-        result = pa.parse(model, args)
+        result = pa.parse(model, args=args)
         # mocked_exit.assert_called_once()
 
     return capsys.readouterr()
@@ -38,7 +38,7 @@ def test_help_general():
     args = ["--help"]
 
     with pytest.raises(SystemExit) as exc_info:
-        pa.parse(Test, args)
+        pa.parse(Test, args=args)
 
     assert exc_info.value.code == 0
 

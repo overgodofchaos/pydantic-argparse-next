@@ -9,7 +9,7 @@ def test_choice():
 
     args = ["choice1"]
 
-    result = pa.parse(Test, args)
+    result = pa.parse(Test, args=args)
 
     assert result.a == "choice1"
 
@@ -20,7 +20,7 @@ def test_choice_2():
 
     args = []
 
-    result = pa.parse(Test, args)
+    result = pa.parse(Test, args=args)
 
     assert result.a == "choice2"
 
@@ -35,7 +35,7 @@ def test_choice_3():
         ValidationError,
         match=r".*Input should be 'choice1' or 'choice2'.*"
     ):
-        result = pa.parse(Test, args)
+        result = pa.parse(Test, args=args)
 
 
 def test_choice_4():
@@ -48,7 +48,7 @@ def test_choice_4():
 
     args = ["choice1"]
 
-    result = pa.parse(Test, args)
+    result = pa.parse(Test, args=args)
 
     assert result.a is Choices.choice1
 
@@ -63,7 +63,7 @@ def test_choice_5():
 
     args = []
 
-    result = pa.parse(Test, args)
+    result = pa.parse(Test, args=args)
 
     assert result.a is Choices.choice2
 
@@ -82,7 +82,7 @@ def test_choice_6():
         pa_classes.PydanticArgparserError,
         match=re.escape("Input should be in [choice1, choice2] for a, but choice3 was given")
     ):
-        result = pa.parse(Test, args)
+        result = pa.parse(Test, args=args)
 
 
 def test_choice_7():
@@ -91,6 +91,6 @@ def test_choice_7():
 
     args = ["--a", "choice1"]
 
-    result = pa.parse(Test, args)
+    result = pa.parse(Test, args=args)
 
     assert result.a == "choice1"

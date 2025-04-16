@@ -35,7 +35,7 @@ def test_complex():
         "--k", "test_k"
     ]
 
-    result = pa.parse(Test, args)
+    result = pa.parse(Test, args=args)
 
     assert result.a == "test_a"
     assert result.b is None
