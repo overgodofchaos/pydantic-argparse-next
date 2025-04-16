@@ -1,7 +1,7 @@
 Basic usage.<br>
 Pydantic only.
 
-
+Example 1
 ```python
 from pydantic import BaseModel
 from typing import Optional
@@ -31,6 +31,8 @@ Help:
 
 <img alt="img" src="img.png" width=800>
 
+
+Example 2
 ```python
 from pydantic import BaseModel, Field
 from typing import Optional
