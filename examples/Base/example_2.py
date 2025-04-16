@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import Optional
-from pydantic_argparse_new import parse
+import pydantic_argparse_new as pa
 from pathlib import Path
 
 
@@ -14,7 +14,7 @@ class Temp(BaseModel):
     g: str = Field("default", description="This is a optional keyword argument with alias", alias="-G")
 
 
-cliargs = parse(Temp, program_name="Example program", description="The example program description")
+cliargs = pa.parse(Temp, program_name="Example program", description="The example program description")
 
 print(cliargs)
 

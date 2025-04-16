@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional
-from pydantic_argparse_new import parse
+import pydantic_argparse_new as pa
 
 
 class Temp(BaseModel):
@@ -9,6 +9,6 @@ class Temp(BaseModel):
     c: Optional[str]  # This is optional keyword argument
 
 
-cliargs = parse(Temp, program_name="Example program", description="The example program description")
+cliargs = pa.parse(Temp, program_name="Example program", description="The example program description")
 
 print(cliargs)
