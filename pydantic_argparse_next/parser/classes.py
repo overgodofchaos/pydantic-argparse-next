@@ -134,7 +134,12 @@ class ArgumentBase(BaseModel):
         if self.optional_annotation:
             return get_args(type_)[0]
         else:
-            return type_
+            type__ = get_origin(type_)
+            if type__ is not None:
+                print(type__)
+                return type__
+            else:
+                return type_
 
     @property
     def optional_annotation(self):
@@ -180,7 +185,7 @@ class ArgumentBase(BaseModel):
             return "choice"
 
         if (
-                get_origin(self.type) is list or
+                (get_origin(self.type) is list or self.type is list) or
                 get_origin(self.type) is tuple
         ):
             return "variadic"
@@ -198,12 +203,12 @@ class ArgumentBase(BaseModel):
             raise PydanticArgparserError("variadic_max_args is only supported for variadic action")
 
     @property
-    def variadic_min_args(self) -> int | float:
+    def variadic_min_args(self) -> int:
         if self.action == "variadic":
             if get_origin(self.type) is tuple:
                 return len(get_args(self.type))
             else:
-                return float("-inf")
+                return 1
         else:
             raise PydanticArgparserError("variadic_min_args is only supported for variadic action")
 

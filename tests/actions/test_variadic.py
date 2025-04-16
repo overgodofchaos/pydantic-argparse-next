@@ -6,16 +6,22 @@ def test_variadic_list():
     class Temp(BaseModel):
         a: list[str]
         b: list[int]
+        c: list
+        d: typing.List
 
     args = [
         "--a", "one", "two", "three",
-        "--b", "1", "2", "3"
+        "--b", "1", "2", "3",
+        "--c", "one", "two", "three",
+        "--d", "one", "two", "three",
     ]
 
     result = pa.parse(Temp, args=args)
 
     assert result.a[1] == "two"
     assert result.b[1] == 2
+    assert result.c[1] == "two"
+    assert result.d[1] == "two"
 
 
 def test_variadic_tuple():
