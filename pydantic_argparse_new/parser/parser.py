@@ -43,6 +43,25 @@ class Parser(BaseModel):
     subcommand: Subcommand | None = None
     prefix: str | None = None
 
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.model_post_init_2()
+
+    def model_post_init_2(self):
+        if self.is_subcommand:
+            if hasattr(self.model, "__parserconfig__"):
+                if not isinstance(self.model.__parserconfig__, ParserConfig):
+                    self.model.__parserconfig__ = ParserConfig()
+            else:
+                self.model.__parserconfig__ = ParserConfig()
+
+            extra_info = self.subcommand.__extra_info__
+
+            if extra_info.long_description:
+                self.model.__parserconfig__.description = extra_info.long_description
+            if extra_info.epilog:
+                self.model.__parserconfig__.epilog = extra_info.epilog
+
     @property
     def is_subcommand(self) -> bool:
         if self.subcommand:

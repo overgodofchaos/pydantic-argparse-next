@@ -221,9 +221,13 @@ def Subcommand(
         max_length: int | None = _Unset,
         union_mode: Literal['smart', 'left_to_right'] = _Unset,
         fail_fast: bool | None = _Unset,
+        long_description: str | None = None,
+        epilog: str | None = None,
         **extra: Unpack[_EmptyKwargs],
 ) -> Any:
     extra_info = ExtraInfoSubcommand(
+        long_description=long_description,
+        epilog=epilog,
     )
 
     if json_schema_extra is not None and json_schema_extra is not PydanticUndefined:

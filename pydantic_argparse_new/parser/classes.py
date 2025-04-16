@@ -34,6 +34,8 @@ class ExtraInfoKeywordArgument(BaseModel):
 
 
 class ExtraInfoSubcommand(BaseModel):
+    long_description: str | None = None
+    epilog: str | None = None
     pass
 
 
