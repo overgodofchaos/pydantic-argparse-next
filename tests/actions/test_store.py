@@ -1,3 +1,5 @@
+import re
+
 from ..testsimport import *
 
 
@@ -84,24 +86,24 @@ def test_store_positional_error():
     class Temp(BaseModel):
         a: bool = pa.Arg(False, description="temp")
 
-    args = ["--a"]
+    args = []
 
     with pytest.raises(
             pa_classes.PydanticArgparserError,
-            match="Positional argument can't be a boolean"
+            match=re.escape("Positional argument can't be a boolean (store true or store false)")
     ):
         result = pa.parse(Temp, args=args)
 
 
 def test_store_positional_error_2():
     class Temp(BaseModel):
-        a: bool = pa.Arg(..., description="temp")
+        a: bool = pa.KwArg(..., description="temp")
 
     args = ["--a"]
 
     with pytest.raises(
             pa_classes.PydanticArgparserError,
-            match="Positional argument can't be a boolean"
+            match="Boolean argument must have a default boolean value"
     ):
         result = pa.parse(Temp, args=args)
 

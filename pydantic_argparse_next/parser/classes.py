@@ -244,8 +244,9 @@ class ArgumentBase(BaseModel):
 class Argument(ArgumentBase):
 
     def argument_validate(self):
-        if self.type is bool:
-            raise PydanticArgparserError("Positional argument can't be a boolean")
+        match self.action:
+            case "store_false" | "store_true":
+                raise PydanticArgparserError("Positional argument can't be a boolean (store true or store false)")
 
 
 class KeywordArgument(ArgumentBase):
