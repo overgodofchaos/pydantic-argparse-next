@@ -359,6 +359,8 @@ class Parser(BaseModel):
 
             name = argument.attribute_name if argument.alias is None else argument.alias
 
+            # print(argument.action)
+
             match argument.action:
                 case "normal":
                     schema[name] = args[argument_position + 1]
@@ -374,6 +376,21 @@ class Parser(BaseModel):
                     schema[name] = argument.resolve_choice(args[argument_position + 1])
                     args.pop(argument_position)
                     args.pop(argument_position)
+                case "variadic":
+                    args.pop(argument_position)
+                    values = []
+                    while True:
+                        if len(args) == 0:
+                            break
+                        if args[argument_position].startswith("-"):
+                            break
+                        values.append(args.pop(argument_position))
+
+                    if len(values) < argument.variadic_min_args or len(values) > argument.variadic_max_args:
+                        raise PydanticArgparserError(f"Argument number of arguments for {argument.name} must"
+                                                     f" be between {argument.variadic_min_args} and "
+                                                     f" {argument.variadic_max_args}. But got {len(values)}.")
+                    schema[name] = values
 
         # Processing optional annotation
         for argument in self.optional_arguments + self.optional_keyword_arguments:
@@ -403,11 +420,7 @@ class Parser(BaseModel):
             if arg != subcommand_name:
                 raise PydanticArgparserError(f"Unrecognized argument: {arg}")
 
-        # print(schema)
-
-        # if self.is_subcommand:
-        #     return schema
-        # else:
+        print(schema)
 
         model = self.model(**schema)
         if subcommand_name:

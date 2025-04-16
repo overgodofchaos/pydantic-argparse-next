@@ -175,10 +175,37 @@ class ArgumentBase(BaseModel):
                 return "store_true"
             elif self.default is True:
                 return "store_false"
+
         if get_origin(self.type) is Literal or issubclass(self.type, Enum):
             return "choice"
 
+        if (
+                get_origin(self.type) is list or
+                get_origin(self.type) is tuple
+        ):
+            return "variadic"
+
         return "normal"
+
+    @property
+    def variadic_max_args(self) -> int | float:
+        if self.action == "variadic":
+            if get_origin(self.type) is tuple:
+                return len(get_args(self.type))
+            else:
+                return float("inf")
+        else:
+            raise PydanticArgparserError("variadic_max_args is only supported for variadic action")
+
+    @property
+    def variadic_min_args(self) -> int | float:
+        if self.action == "variadic":
+            if get_origin(self.type) is tuple:
+                return len(get_args(self.type))
+            else:
+                return float("-inf")
+        else:
+            raise PydanticArgparserError("variadic_min_args is only supported for variadic action")
 
     @property
     def help_text(self) -> list[str]:
@@ -245,6 +272,8 @@ class Argument(ArgumentBase):
         match self.type.__name__:
             case "bool":
                 raise PydanticArgparserError("Positional argument can't be a boolean (store true or store false)")
+            case "list":
+                raise PydanticArgparserError("Positional argument can't be a list")
 
 
 class KeywordArgument(ArgumentBase):
