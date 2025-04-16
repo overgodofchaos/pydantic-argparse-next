@@ -129,17 +129,25 @@ class ArgumentBase(BaseModel):
         return self.__filed_info__.default
 
     @property
-    def type(self):
+    def type_raw(self):
         type_ = self.__filed_info__.annotation
         if self.optional_annotation:
             return get_args(type_)[0]
         else:
-            type__ = get_origin(type_)
-            if type__ is not None:
-                print(type__)
-                return type__
-            else:
-                return type_
+            return type_
+
+    @property
+    def type(self):
+        type_ = get_origin(self.type_raw)
+        if type_ is not None:
+            return type_
+        else:
+            return self.type_raw
+
+    @property
+    def type_args(self):
+        args = get_args(self.type_raw)
+        return args
 
     @property
     def optional_annotation(self):
@@ -163,7 +171,7 @@ class ArgumentBase(BaseModel):
     def choices(self) -> list[str]:
         if self.action != "choice":
             raise PydanticArgparserError("Choices list available only for choice argument")
-        if get_origin(self.type) is Literal:
+        if self.type is Literal:
             choices = get_args(self.type)
             return [str(x) for x in choices]
         elif issubclass(self.type, Enum):
@@ -181,12 +189,12 @@ class ArgumentBase(BaseModel):
             elif self.default is True:
                 return "store_false"
 
-        if get_origin(self.type) is Literal or issubclass(self.type, Enum):
+        if self.type is Literal or issubclass(self.type, Enum):
             return "choice"
 
         if (
-                (get_origin(self.type) is list or self.type is list) or
-                get_origin(self.type) is tuple
+                (self.type is list or self.type is list) or
+                self.type is tuple
         ):
             return "variadic"
 
@@ -195,8 +203,8 @@ class ArgumentBase(BaseModel):
     @property
     def variadic_max_args(self) -> int | float:
         if self.action == "variadic":
-            if get_origin(self.type) is tuple:
-                return len(get_args(self.type))
+            if self.type is tuple:
+                return len(self.type_args)
             else:
                 return float("inf")
         else:
@@ -205,8 +213,8 @@ class ArgumentBase(BaseModel):
     @property
     def variadic_min_args(self) -> int:
         if self.action == "variadic":
-            if get_origin(self.type) is tuple:
-                return len(get_args(self.type))
+            if self.type is tuple:
+                return len(self.type_args)
             else:
                 return 1
         else:
@@ -258,7 +266,7 @@ class ArgumentBase(BaseModel):
         return result
 
     def resolve_choice(self, x: str) -> str | Enum:
-        if get_origin(self.type) is Literal:
+        if self.type is Literal:
             return x
         elif issubclass(self.type, Enum):
             try:
