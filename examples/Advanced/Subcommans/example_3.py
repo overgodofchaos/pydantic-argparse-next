@@ -20,14 +20,11 @@ class Temp(BaseModel):
     sub2: Subcommand2 = pa.Subcommand(None, description="This is a subcommand")
 
 
-cliargs = pa.parse(Temp, program_name="Example program", description="The example program description")
-
-# The selected subcommand is always available in the __subcommand__ attribute.
-subcommand_name = cliargs.__subcommand__.name
-subcommand_value = cliargs.__subcommand__.value
+cliargs = pa.parse(
+    Temp,
+    program_name="Example program",
+    description="The example program description",
+    subcomand_required=False
+)
 
 print(cliargs)
-print(f"Subcommand name: {subcommand_name}")
-print(f"Subcommand value: {subcommand_value}")
-
-
