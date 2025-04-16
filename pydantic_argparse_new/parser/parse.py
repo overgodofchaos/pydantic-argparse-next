@@ -18,6 +18,7 @@ def parse(
         program_name: str = None,
         description: str = None,
         epilog: str = None,
+        subcomand_required: bool = True,
         args: list[str] = None
 ) -> T:
     if args is None:
@@ -45,6 +46,8 @@ def parse(
             model.__parserconfig__.description = description
         if epilog:
             model.__parserconfig__.epilog = epilog
+        if subcomand_required is False:
+            model.__parserconfig__.subcommand_required = subcomand_required
 
     args_model = parser.resolve()
 
