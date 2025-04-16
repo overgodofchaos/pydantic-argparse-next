@@ -1,4 +1,4 @@
-from pydantic_argparse_new.parser.classes import PydanticArgparserError
+from pydantic_argparse_next.parser.classes import PydanticArgparserError
 from ..testsimport import *
 
 

@@ -5,7 +5,7 @@
 ```python
 from pydantic import BaseModel
 from typing import Optional
-import pydantic_argparse_new as pa
+import pydantic_argparse_next as pa
 
 
 class Temp(BaseModel):
@@ -40,7 +40,7 @@ Help:
 ```python
 from pydantic import BaseModel, Field
 from typing import Optional
-import pydantic_argparse_new as pa
+import pydantic_argparse_next as pa
 
 
 class Temp(BaseModel):
@@ -78,7 +78,7 @@ Help:
 
 ```python
 from pydantic import BaseModel
-import pydantic_argparse_new as pa
+import pydantic_argparse_next as pa
 
 
 class Temp(BaseModel):

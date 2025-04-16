@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import Optional
-import pydantic_argparse_new as pa
+import pydantic_argparse_next as pa
 from pathlib import Path
 
 

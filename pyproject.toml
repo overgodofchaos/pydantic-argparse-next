@@ -3,7 +3,7 @@ requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [project]
-name = "pydantic-argparse-new"
+name = "pydantic-argparse-next"
 version = "0.1.0"
 description = "Pydantic 2 argparse."
 readme = "README.md"
@@ -26,7 +26,7 @@ dependencies = [
 ]
 
 packages = [
-    { include = "pydantic_argparse_new" }
+    { include = "pydantic_argparse_next" }
 ]
 
 [tool.poetry]

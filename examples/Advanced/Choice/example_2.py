@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from enum import Enum
-import pydantic_argparse_new as pa
+import pydantic_argparse_next as pa
 
 
 class Choices(Enum):

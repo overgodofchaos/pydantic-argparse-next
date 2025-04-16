@@ -1,5 +1,5 @@
-import pydantic_argparse_new as pa
-from pydantic_argparse_new.parser import classes as pa_classes
+import pydantic_argparse_next as pa
+from pydantic_argparse_next.parser import classes as pa_classes
 from pydantic import BaseModel, Field, ValidationError
 from typing import Optional, Union, Literal
 from enum import Enum

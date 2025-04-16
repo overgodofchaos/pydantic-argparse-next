@@ -1,4 +1,4 @@
-from pydantic_argparse_new import Arg, KwArg, Subcommand, parse, parserconfig
+from pydantic_argparse_next import Arg, KwArg, Subcommand, parse, parserconfig
 from pydantic import BaseModel, Field
 from typing import Optional, Literal, Union
 from enum import Enum
