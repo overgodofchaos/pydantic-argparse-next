@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import Optional
 from pydantic_argparse_new import parse
+from pathlib import Path
 
 
 class Temp(BaseModel):

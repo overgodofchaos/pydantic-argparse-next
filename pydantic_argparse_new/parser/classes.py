@@ -210,7 +210,7 @@ class ArgumentBase(BaseModel):
             case "store_false" | "store_true":
                 input_ = "STORE"
             case _:
-                input_ = "TEXT"
+                input_ = str(self.type.__name__).upper()
 
         if isinstance(self, Subcommand):
             input_ = ""
