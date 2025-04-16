@@ -49,7 +49,7 @@ def test_variadic_tuple_too_many_args():
 
     with pytest.raises(
         pa_classes.PydanticArgparserError,
-        match="Argument number of arguments for --a must be between 3 and  3. But got 4."
+        match="Argument number of arguments for --a must be 3. But got 4."
     ):
         result = pa.parse(Temp, args=args)
 
@@ -64,6 +64,6 @@ def test_variadic_tuple_too_few_args():
 
     with pytest.raises(
         pa_classes.PydanticArgparserError,
-        match=re.escape("Argument number of arguments for --a must be between 3 and  3. But got 2.")
+        match=re.escape("Argument number of arguments for --a must be 3. But got 2.")
     ):
         result = pa.parse(Temp, args=args)

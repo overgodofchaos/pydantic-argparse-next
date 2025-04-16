@@ -387,9 +387,13 @@ class Parser(BaseModel):
                         values.append(args.pop(argument_position))
 
                     if len(values) < argument.variadic_min_args or len(values) > argument.variadic_max_args:
+                        if argument.variadic_max_args == argument.variadic_min_args:
+                            target = f"{argument.variadic_max_args}"
+                        else:
+                            target = f"between {argument.variadic_min_args} and {argument.variadic_max_args}"
+
                         raise PydanticArgparserError(f"Argument number of arguments for {argument.name} must"
-                                                     f" be between {argument.variadic_min_args} and "
-                                                     f" {argument.variadic_max_args}. But got {len(values)}.")
+                                                     f" be {target}. But got {len(values)}.")
                     schema[name] = values
 
         # Processing optional annotation
