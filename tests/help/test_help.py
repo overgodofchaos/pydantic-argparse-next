@@ -127,3 +127,37 @@ def test_help_subcomands(capsys):
     assert "SS1-E" in output
 
 
+def test_help_subcomands_2(capsys):
+
+    class SubCommand1(BaseModel):
+        d: str = pa.KwArg("test", description="test")
+
+    class SubCommand2(BaseModel):
+        e: str = pa.KwArg("test", description="test")
+
+    class Test(BaseModel):
+        a: str = pa.Arg(None, description="test")
+        b: Optional[SubCommand1] = pa.Subcommand(
+            ...,
+            description="test",
+            long_description="S1-D",
+            epilog="S1-E",
+        )
+        c: Optional[SubCommand1] = pa.Subcommand(
+            ...,
+            description="test",
+            long_description="S2-D",
+            epilog="S2-E",
+        )
+
+    args = [
+        "b",
+        "--help"
+    ]
+
+    output = read_output(Test, args, capsys).out
+
+    assert "pytest b" in output
+    assert "S1-D" in output
+    assert "S1-E" in output
+
