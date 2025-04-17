@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [project]
 name = "pydantic-argparse-next"
-version = "0.1.0"
+version = "1.0.0"
 description = "Pydantic 2 argparse."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -28,6 +28,11 @@ dependencies = [
 packages = [
     { include = "pydantic_argparse_next" }
 ]
+
+[project.urls]
+Homepage = "https://github.com/overgodofchaos/pydantic-argparse-next"
+Documentation = "https://github.com/overgodofchaos/pydantic-argparse-next"
+Repository = "https://github.com/overgodofchaos/pydantic-argparse-next"
 
 [tool.poetry]
 package-mode = true
