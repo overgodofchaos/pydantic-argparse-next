@@ -1,4 +1,4 @@
-# pydantic-argparse-new
+# pydantic-argparse-next
 
 Argument parser based on pydantic v2.
 
