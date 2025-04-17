@@ -1,5 +1,6 @@
 from ..testsimport import *
 from pathlib import Path
+from collections import deque
 
 
 def test_variadic_list():
@@ -122,6 +123,22 @@ def test_variadic_positional():
     assert result.b[1] == "two"
 
 
+def test_variadic_positional_2():
+    class Temp(BaseModel):
+        a: list[str] = pa.Arg(n_args=3)
+        b: int = pa.Arg()
+
+    args = [
+        "one", "two", "three",
+        "2"
+    ]
+
+    result = pa.parse(Temp, args=args)
+
+    assert result.a[1] == "two"
+    assert result.b == 2
+
+
 def test_variadic_positional_error():
     class Temp(BaseModel):
         a: list[str] = pa.Arg(n_args="2...4")
@@ -151,3 +168,37 @@ def test_variadic_incorrect_n_args_error():
     ):
         result = pa.parse(Temp, args=args)
 
+
+def test_variadic_set():
+    class Temp(BaseModel):
+        a: set[str]
+        b: frozenset[str]
+
+    args = [
+        "--a", "one", "two", "three",
+        "--b", "one", "two", "three",
+    ]
+
+    result = pa.parse(Temp, args=args)
+
+    assert "one" in result.a
+    assert "two" in result.a
+    assert "three" in result.a
+    assert "one" in result.b
+    assert "two" in result.b
+    assert "three" in result.b
+
+
+def test_variadic_deque():
+    class Temp(BaseModel):
+        a: deque[str]
+
+    args = [
+        "--a", "one", "two", "three",
+    ]
+
+    result = pa.parse(Temp, args=args)
+
+    assert "one" in result.a
+    assert "two" in result.a
+    assert "three" in result.a

@@ -16,6 +16,7 @@ import sys
 from enum import Enum
 from pathlib import Path
 import types
+from collections import deque
 
 
 # noinspection PyRedeclaration
@@ -240,8 +241,10 @@ class ArgumentBase(BaseModel):
             return "choice"
 
         if (
-                (self.type is list or self.type is list) or
-                self.type is tuple
+                self.type is list or
+                self.type is tuple or
+                self.type is set or self.type is frozenset or
+                self.type is deque
         ):
             return "variadic"
 
