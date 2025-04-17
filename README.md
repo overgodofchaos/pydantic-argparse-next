@@ -8,6 +8,34 @@ Argument parser based on pydantic v2.
 pip install pydantic-argparse-next
 ```
 
+### Base usage:
+
+# 
+
+```python
+from pydantic import BaseModel, Field
+import pydantic_argparse_next as pa
+
+
+class Temp(BaseModel):
+    # Positional arguments
+    a: str = pa.Arg(description="This is a required positional argument.")
+    b: str = pa.Arg("defalut_value", description="This is a OPTIONAL positional argument.")
+
+    # Keyword arguments
+    # Simple attributes or pydantic.Field are keyword arguments.
+    c: str
+    d: str = Field(None, description="This is a OPTIONAL keyword argument.")
+    e: str = pa.KwArg(description="This is a required keyword argument.")
+```
+
+```
+Input: appname "test1" --c "test2" --e="test3"
+Output: a='test1' b='defalut_value' c='test2' d=None e='test3'
+```
+
+ **More details in the documentation**
+
 ### Supports:
 
 ✅ Positional arguments
@@ -45,6 +73,8 @@ pip install pydantic-argparse-next
         ⬜ Easy saving config to file
 
         ⬜ Easy load config from file
+
+**More details in the documentation**
 
 ### Docs and examples:
 
