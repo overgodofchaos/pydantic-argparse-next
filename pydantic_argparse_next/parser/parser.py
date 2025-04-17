@@ -432,7 +432,7 @@ class Parser(BaseModel):
             if arg != subcommand_name:
                 raise PydanticArgparserError(f"Unrecognized argument: {arg}")
 
-        print(schema)
+        # print(schema)
 
         model = self.model(**schema)
         if subcommand_name:

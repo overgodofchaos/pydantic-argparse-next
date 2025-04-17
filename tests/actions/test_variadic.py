@@ -28,6 +28,20 @@ def test_variadic_list():
     assert result.e[1] == "two"
 
 
+def test_variadic_list_default():
+    class Temp(BaseModel):
+        a: list[str] = None
+        b: list[int] = [1, 2, 3]
+
+    args = [
+    ]
+
+    result = pa.parse(Temp, args=args)
+
+    assert result.a is None
+    assert result.b == [1, 2, 3]
+
+
 def test_variadic_list_too_many_args():
     class Temp(BaseModel):
         a: list[str] = pa.KwArg(n_args="1...3")

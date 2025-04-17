@@ -22,7 +22,7 @@ Argument parser based on pydantic v2.
   
   - [x] Optional subcommands
   
-  - [x] Subcommands in subcommands
+  - [x] Subcommands within subcommands
 
 - [x] Actions
   
@@ -32,14 +32,24 @@ Argument parser based on pydantic v2.
   
   - [x] Store False
   
-  - [ ] Variadic arguments (soon)
+  - [x] Variadic arguments
+
+- [ ] Extra
+  
+  - [ ] Easy saving config to file
+  
+  - [ ] Easy load config from file
 
 ### Docs and examples:
 
 1. [Base usage](./docs/BaseUsage.md)
 
-2. [Choice](./docs/Choice.md)
-
-3. [Store True and Store False](./docs/StoreTrueFalse.md)
-
-4. [Subcommands](./docs/Subcommans.md)
+2. Actions
+   
+   1. [Choice](./docs/Choice.md)
+   
+   2. [Store True and Store False](./docs/StoreTrueFalse.md)
+   
+   3. [Subcommands](./docs/Subcommans.md)
+   
+   4. [Variadic](./docs/Variadic.md)
