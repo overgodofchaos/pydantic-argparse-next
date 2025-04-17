@@ -2,6 +2,12 @@
 
 Argument parser based on pydantic v2.
 
+### Install:
+
+```bash
+pip install pydantic-argparse-next
+```
+
 ### Supports:
 
 - [x] Positional arguments
