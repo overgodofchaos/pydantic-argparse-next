@@ -10,52 +10,52 @@ pip install pydantic-argparse-next
 
 ### Supports:
 
-- [x] Positional arguments
-  
-  - [x] Required positional arguments
-  
-  - [x] Optional positional arguments
+✅ Positional arguments
 
-- [x] Keyword arguments
-  
-  - [x] Required keyword arguments
-  
-  - [x] Optional keyword arguments
+        ✅ Required positional arguments
 
-- [x] Subcommands
-  
-  - [x] Required subcommands
-  
-  - [x] Optional subcommands
-  
-  - [x] Subcommands within subcommands
+        ✅ Optional positional arguments
 
-- [x] Actions
-  
-  - [x] Choice (And simple text and Enum object)
-  
-  - [x] Store True
-  
-  - [x] Store False
-  
-  - [x] Variadic arguments
+✅ Keyword arguments
 
-- [ ] Extra
-  
-  - [ ] Easy saving config to file
-  
-  - [ ] Easy load config from file
+        ✅ Required keyword arguments
+
+        ✅ Optional keyword arguments
+
+✅ Subcommands
+
+        ✅ Required subcommands
+
+        ✅ Optional subcommands
+
+        ✅ Subcommands within subcommands
+
+✅ Actions
+
+        ✅ Choice (And simple text and Enum object)
+
+        ✅ Store True
+
+        ✅ Store False
+
+        ✅ Variadic arguments
+
+⬜ Extra
+
+        ⬜ Easy saving config to file
+
+        ⬜ Easy load config from file
 
 ### Docs and examples:
 
-1. [Base usage](./docs/BaseUsage.md)
+1. [Base usage](https://github.com/overgodofchaos/pydantic-argparse-next/blob/main/docs/BaseUsage.md)
 
 2. Actions
    
-   1. [Choice](./docs/Choice.md)
+   1. [Choice](https://github.com/overgodofchaos/pydantic-argparse-next/blob/main/docs/Choice.md)
    
-   2. [Store True and Store False](./docs/StoreTrueFalse.md)
+   2. [Store True and Store False](https://github.com/overgodofchaos/pydantic-argparse-next/blob/main/docs/StoreTrueFalse.md)
    
-   3. [Subcommands](./docs/Subcommans.md)
+   3. [Subcommands](https://github.com/overgodofchaos/pydantic-argparse-next/blob/main/docs/Subcommands.md)
    
-   4. [Variadic](./docs/Variadic.md)
+   4. [Variadic](https://github.com/overgodofchaos/pydantic-argparse-next/blob/main/docs/Variadic.md)
