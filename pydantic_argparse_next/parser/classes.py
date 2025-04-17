@@ -204,7 +204,8 @@ class ArgumentBase(BaseModel):
     def variadic_max_args(self) -> int | float:
         if self.action == "variadic":
             if self.type is tuple:
-                return len(self.type_args)
+                args_count = len(self.type_args)
+                return args_count if args_count > 0 else float("inf")
             else:
                 return float("inf")
         else:

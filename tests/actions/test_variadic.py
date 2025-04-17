@@ -27,9 +27,11 @@ def test_variadic_list():
 def test_variadic_tuple():
     class Temp(BaseModel):
         a: tuple[str, int, Path]
+        b: tuple
 
     args = [
         "--a", "one", "2", "three",
+        "--b", "one", "2", "three", "4",
     ]
 
     result = pa.parse(Temp, args=args)
@@ -37,6 +39,8 @@ def test_variadic_tuple():
     assert result.a[0] == "one"
     assert result.a[1] == 2
     assert isinstance(result.a[2], Path)
+    assert result.b[0] == "one"
+    assert result.b[1] == "2"
 
 
 def test_variadic_tuple_too_many_args():

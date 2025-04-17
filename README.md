@@ -43,5 +43,3 @@ Argument parser based on pydantic v2.
 3. [Store True and Store False](./docs/StoreTrueFalse.md)
 
 4. [Subcommands](./docs/Subcommans.md)
-
-
