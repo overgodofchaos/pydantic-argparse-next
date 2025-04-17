@@ -25,11 +25,50 @@ class BaseModel(BaseModel):
     )
 
 
-class ExtraInfoArgument(BaseModel):
+class ExtraInfoArgumetnBase(BaseModel):
+    n_args: str | int = "1..."
+
+    @property
+    def min_args(self) -> int:
+        try:
+            min_args = int(self.n_args)
+            return min_args
+        except ValueError:
+            n_args = self.n_args.split("...")
+            if len(n_args[0]) == 0:
+                return 1
+            else:
+                min_args = int(n_args[0])
+                if min_args == 0:
+                    raise PydanticArgparserError("Minimum number of arguments should be greater than 0.")
+                else:
+                    return min_args
+
+    @property
+    def max_args(self) -> int | float:
+        try:
+            max_args = int(self.n_args)
+            return max_args
+        except ValueError:
+            max_args = self.n_args.split("...")
+            if len(max_args[1]) == 0:
+                return float("inf")
+            else:
+                max_args = int(max_args[1])
+                if max_args <= self.min_args:
+                    raise PydanticArgparserError(
+                        f"Maximum number of arguments should be greater than minimum."
+                        f" But {self.n_args} was given."
+                    )
+                else:
+                    return max_args
+
+
+class ExtraInfoArgument(ExtraInfoArgumetnBase):
     pass
 
 
-class ExtraInfoKeywordArgument(BaseModel):
+class ExtraInfoKeywordArgument(ExtraInfoArgumetnBase):
     pass
 
 
@@ -105,6 +144,14 @@ class ArgumentBase(BaseModel):
         pass
 
     @property
+    def extra_info(self) -> Union[ExtraInfoArgument, ExtraInfoKeywordArgument, ExtraInfoSubcommand]:
+        return self.__extra_info__
+
+    @property
+    def filed_info(self) -> FieldInfo:
+        return self.__filed_info__
+
+    @property
     def name(self):
         if isinstance(self, Argument | Subcommand):
             return self.attribute_name
@@ -155,7 +202,7 @@ class ArgumentBase(BaseModel):
         if str(type_).find("Optional") != -1:
             return True
         elif (types.UnionType is get_origin(type_) and
-                types.NoneType in get_args(type_)):
+              types.NoneType in get_args(type_)):
             return True
         else:
             return False
@@ -205,9 +252,9 @@ class ArgumentBase(BaseModel):
         if self.action == "variadic":
             if self.type is tuple:
                 args_count = len(self.type_args)
-                return args_count if args_count > 0 else float("inf")
-            else:
-                return float("inf")
+                if args_count != 0:
+                    return args_count
+            return self.extra_info.max_args
         else:
             raise PydanticArgparserError("variadic_max_args is only supported for variadic action")
 
@@ -215,9 +262,10 @@ class ArgumentBase(BaseModel):
     def variadic_min_args(self) -> int:
         if self.action == "variadic":
             if self.type is tuple:
-                return len(self.type_args)
-            else:
-                return 1
+                args_count = len(self.type_args)
+                if args_count != 0:
+                    return args_count
+            return self.extra_info.min_args
         else:
             raise PydanticArgparserError("variadic_min_args is only supported for variadic action")
 
@@ -283,11 +331,17 @@ class ArgumentBase(BaseModel):
 class Argument(ArgumentBase):
 
     def argument_validate(self):
-        match self.type.__name__:
-            case "bool":
-                raise PydanticArgparserError("Positional argument can't be a boolean (store true or store false)")
-            case "list":
-                raise PydanticArgparserError("Positional argument can't be a list")
+        if self.type is bool:
+            raise PydanticArgparserError("Positional argument can't be a boolean (store true or store false)")
+
+        match self.action:
+            case "variadic":
+                min_args = self.variadic_min_args
+                max_args = self.variadic_max_args
+                if min_args != max_args:
+                    raise PydanticArgparserError(f"A positional variadic argument must have a strictly"
+                                                 f" defined number of arguments. But {self.extra_info.n_args}"
+                                                 f" was given.")
 
 
 class KeywordArgument(ArgumentBase):
@@ -327,6 +381,3 @@ class KeywordArgument(ArgumentBase):
 
 class Subcommand(ArgumentBase):
     pass
-
-
-

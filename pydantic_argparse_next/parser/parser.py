@@ -334,11 +334,19 @@ class Parser(BaseModel):
         for argument in self.required_arguments + self.optional_arguments:
             name = argument.attribute_name if argument.alias is None else argument.alias
             if len(args) > 0 and args[0].startswith("-") is False:
-                if argument.action == "choice":
-                    schema[name] = argument.resolve_choice(args[0])
-                else:
-                    schema[name] = args[0]
-                args.pop(0)
+                match argument.action:
+                    case "normal":
+                        schema[name] = args[0]
+                        args.pop(0)
+                    case "choice":
+                        schema[name] = argument.resolve_choice(args[0])
+                        args.pop(0)
+                    case "variadic":
+                        values = []
+                        for i in range(argument.variadic_max_args):
+                            values.append(args[0])
+                            args.pop(0)
+                        schema[name] = values
             else:
                 if argument.required:
                     raise PydanticArgparserError(f"Argument {argument.attribute_name} is required")

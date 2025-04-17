@@ -15,7 +15,6 @@ from .classes import ExtraInfoArgument, ExtraInfoKeywordArgument, ExtraInfoSubco
 def Arg(
         default: Any = PydanticUndefined,
         *args,
-        required: bool = True,
         default_factory: Callable[[], Any] | Callable[[dict[str, Any]], Any] | None = _Unset,
         alias: str | None = _Unset,
         alias_priority: int | None = _Unset,
@@ -50,10 +49,11 @@ def Arg(
         max_length: int | None = _Unset,
         union_mode: Literal['smart', 'left_to_right'] = _Unset,
         fail_fast: bool | None = _Unset,
+        n_args: str | int = "1...",
         **extra: Unpack[_EmptyKwargs],
 ) -> Any:
     extra_info = ExtraInfoArgument(
-        required=required,
+        n_args=n_args,
     )
 
     if json_schema_extra is not None and json_schema_extra is not PydanticUndefined:
@@ -136,10 +136,11 @@ def KwArg(
         max_length: int | None = _Unset,
         union_mode: Literal['smart', 'left_to_right'] = _Unset,
         fail_fast: bool | None = _Unset,
+        n_args: str | int = "1...",
         **extra: Unpack[_EmptyKwargs],
 ) -> Any:
     extra_info = ExtraInfoKeywordArgument(
-        required=required,
+        n_args=n_args,
     )
 
     if json_schema_extra is not None and json_schema_extra is not PydanticUndefined:
