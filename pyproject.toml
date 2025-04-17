@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [project]
 name = "pydantic-argparse-next"
-version = "1.0.3"
+version = "1.0.4"
 description = "Pydantic 2 argparse."
 readme = "README.md"
 requires-python = ">=3.11"

@@ -83,6 +83,7 @@ class ParserConfig(BaseModel):
     program_name: str | None = None
     description: str | None = None
     epilog: str | None = None
+    version: str | None = None
     subcommand_required: bool = True
     # subcommand_destination: str = "subcommand"
 
@@ -110,10 +111,11 @@ def parserconfig(
         program_name: str = None,
         description: str = None,
         epilog: str = None,
-        subcommand_required: bool = True
+        subcommand_required: bool = True,
+        version: str = None
 ):
     return ParserConfig(program_name=program_name, description=description, epilog=epilog,
-                        subcommand_required=subcommand_required)
+                        subcommand_required=subcommand_required, version=version)
 
 
 class PydanticArgparserError(Exception):

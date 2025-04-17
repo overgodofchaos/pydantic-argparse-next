@@ -49,6 +49,7 @@ def test_parserconfig(capsys):
             program_name="Test program name",
             description="Test program description",
             epilog="Test program epilog",
+            version="1.0.5"
         )
 
         a: str = pa.KwArg(..., description="test")
@@ -59,6 +60,30 @@ def test_parserconfig(capsys):
     assert "Test program name" in output
     assert "Test program description" in output
     assert "Test program epilog" in output
+    assert "1.0.5" in output
+
+
+def test_parserconfig_2(capsys):
+    class Test(BaseModel):
+        a: str = pa.KwArg(..., description="test")
+        b: str = pa.KwArg(None, description="test")
+
+    with patch("sys.exit") as mocked_exit:
+        result = pa.parse(
+            Test,
+            args=["--help"],
+            program_name="Test program name",
+            description="Test program description",
+            epilog="Test program epilog",
+            version="1.0.5"
+        )
+
+    output = capsys.readouterr().out
+
+    assert "Test program name" in output
+    assert "Test program description" in output
+    assert "Test program epilog" in output
+    assert "1.0.5" in output
 
 
 def test_help_subcomands(capsys):

@@ -19,6 +19,7 @@ def parse(
         description: str = None,
         epilog: str = None,
         subcomand_required: bool = True,
+        version: str = None,
         args: list[str] = None
 ) -> T:
     if args is None:
@@ -33,7 +34,7 @@ def parse(
         args_ = args
 
     parser = Parser(model=model, args=args_)
-    if any([program_name, description, epilog]):
+    if any([program_name, description, epilog, version]):
         if hasattr(model, "__parserconfig__"):
             if not isinstance(model.__parserconfig__, ParserConfig):
                 model.__parserconfig__ = ParserConfig()
@@ -48,6 +49,8 @@ def parse(
             model.__parserconfig__.epilog = epilog
         if subcomand_required is False:
             model.__parserconfig__.subcommand_required = subcomand_required
+        if version:
+            model.__parserconfig__.version = version
 
     args_model = parser.resolve()
 

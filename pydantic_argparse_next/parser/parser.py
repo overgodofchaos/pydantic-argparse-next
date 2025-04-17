@@ -106,6 +106,10 @@ class Parser(BaseModel):
     def program_epilog(self) -> str | None:
         return self._parserconfig.epilog
 
+    @property
+    def program_version(self) -> str | None:
+        return self._parserconfig.version
+
     # @property
     # def subcommand_destionation(self) -> str:
     #     name = self._parserconfig.subcommand_destination
@@ -198,16 +202,20 @@ class Parser(BaseModel):
         console = Console()
 
         # Program name and description
+        name = self.name
+        if self.program_version and not self.is_subcommand:
+            name += f" {self.program_version}"
+
         if self.program_description:
             program = Panel(
                 self.program_description,
                 title_align="left",
-                title=self.name,
+                title=name,
                 border_style="bold yellow"
             )
         else:
             program = Panel(
-                self.name,
+                name,
                 title_align="left",
                 title=None,
                 border_style="bold yellow"
