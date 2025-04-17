@@ -3,3 +3,4 @@ mytest*
 venv.bat
 !tests/
 !tests/test*
+dist
