@@ -204,6 +204,7 @@ def test_help_variadic(capsys):
         b: tuple[str, int, float]
         c: tuple
         d: list[int] = pa.KwArg(n_args="2...6")
+        e: list[str] = pa.KwArg(n_args="2...3")
 
     output = read_output(Test, ["--help"], capsys).out
 
@@ -211,4 +212,5 @@ def test_help_variadic(capsys):
     assert "TUPLE (arg1 STR, arg2 INT, arg3 FLOAT)" in output
     assert "TUPLE[STR] (arg1, {arg2, ...})" in output
     assert "LIST[INT] (arg1, arg2, {arg3, ..., arg6})" in output
+    assert "LIST[STR] (arg1, arg2, {arg3})" in output
 

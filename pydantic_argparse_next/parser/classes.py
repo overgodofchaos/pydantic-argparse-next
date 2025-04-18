@@ -323,7 +323,10 @@ class ArgumentBase(BaseModel):
                         req_args += ", {" f"arg{i}, ..."
 
                     if self.variadic_max_args < float("inf"):
-                        req_args += f", arg{self.variadic_max_args}" + "}"
+                        if i == self.variadic_max_args:
+                            req_args += ", {" + f"arg{self.variadic_max_args}" + "}"
+                        else:
+                            req_args += f", arg{self.variadic_max_args}" + "}"
                     else:
                         req_args += "}"
 
@@ -350,7 +353,10 @@ class ArgumentBase(BaseModel):
                         req_args += ", {" f"arg{i}, ..."
 
                     if self.variadic_max_args < float("inf"):
-                        req_args += f", arg{self.variadic_max_args}" + "}"
+                        if i == self.variadic_max_args:
+                            req_args += ", {" + f"arg{self.variadic_max_args}" + "}"
+                        else:
+                            req_args += f", arg{self.variadic_max_args}" + "}"
                     else:
                         req_args += "}"
 
