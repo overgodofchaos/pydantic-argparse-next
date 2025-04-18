@@ -197,3 +197,18 @@ def test_help_subcomands_2(capsys):
     assert "S1-D" in output
     assert "S1-E" in output
 
+
+def test_help_variadic(capsys):
+    class Test(BaseModel):
+        a: list[str]
+        b: tuple[str, int, float]
+        c: tuple
+        d: list[int] = pa.KwArg(n_args="2...6")
+
+    output = read_output(Test, ["--help"], capsys).out
+
+    assert "LIST[STR] (arg1, {arg2, ...})" in output
+    assert "TUPLE (arg1 STR, arg2 INT, arg3 FLOAT)" in output
+    assert "TUPLE[STR] (arg1, {arg2, ...})" in output
+    assert "LIST[INT] (arg1, arg2, {arg3, ..., arg6})" in output
+

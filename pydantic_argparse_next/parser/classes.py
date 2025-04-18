@@ -270,12 +270,13 @@ class ArgumentBase(BaseModel):
                 args_count = len(self.type_args)
                 if args_count != 0:
                     return args_count
-            return self.extra_info.min_args
+            return self.extra_info.min_args if self.extra_info.min_args >= 1 else 1
         else:
             raise PydanticArgparserError("variadic_min_args is only supported for variadic action")
 
     @property
     def help_text(self) -> list[str]:
+        # Name
         if isinstance(self, Argument):
             name = self.attribute_name
             alias = "" if self.alias is None else f"({self.alias})"
@@ -288,6 +289,7 @@ class ArgumentBase(BaseModel):
         else:
             raise IOError(f"Type {type(self)} not recognized")
 
+        # Default
         if self.action == "choice" and isinstance(self.default, Enum):
             default = "" if self.required else f"[Default: {str(self.default.name)}]"
         else:
@@ -296,13 +298,64 @@ class ArgumentBase(BaseModel):
             else:
                 default = "" if self.required else f"[Default: {str(self.default)}]"
 
+        # Description
         description = self.description
 
+        # Value
         match self.action:
             case "choice":
                 input_ = "{" + f"{'|'.join(self.choices)}" + "}"
             case "store_false" | "store_true":
                 input_ = "STORE"
+            case "variadic":
+                if not self.type_args:
+                    input_ = str(self.type.__name__).upper()
+                    input_ = f"{input_}[STR]"
+
+                    i = 1
+                    req_args = []
+                    for _ in range(self.variadic_min_args):
+                        req_args.append(f"arg{i}")
+                        i += 1
+                    req_args = ", ".join(req_args)
+
+                    if i < self.variadic_max_args:
+                        req_args += ", {" f"arg{i}, ..."
+
+                    if self.variadic_max_args < float("inf"):
+                        req_args += f", arg{self.variadic_max_args}" + "}"
+                    else:
+                        req_args += "}"
+
+                    input_ = f"{input_} ({req_args})"
+                elif self.type is tuple:
+                    vals_help = [x.__name__.upper() for x in self.type_args]
+                    vals_help = [f"arg{x+1} {vals_help[x]}" for x in range(len(vals_help))]
+                    vals_help = f"{', '.join(vals_help)}"
+                    input_ = str(self.type.__name__).upper()
+                    input_ = f"{input_} ({vals_help})"
+                else:
+                    vals_help = self.type_args[0].__name__.upper()
+                    input_ = str(self.type.__name__).upper()
+                    input_ = f"{input_}[{vals_help}]"
+
+                    i = 1
+                    req_args = []
+                    for _ in range(self.variadic_min_args):
+                        req_args.append(f"arg{i}")
+                        i += 1
+                    req_args = ", ".join(req_args)
+
+                    if i < self.variadic_max_args:
+                        req_args += ", {" f"arg{i}, ..."
+
+                    if self.variadic_max_args < float("inf"):
+                        req_args += f", arg{self.variadic_max_args}" + "}"
+                    else:
+                        req_args += "}"
+
+                    input_ = f"{input_} ({req_args})"
+
             case _:
                 input_ = str(self.type.__name__).upper()
 
@@ -310,6 +363,7 @@ class ArgumentBase(BaseModel):
             input_ = ""
             default = ""
 
+        # ###
         result = [
             name,
             alias,
