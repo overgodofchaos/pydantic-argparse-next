@@ -232,6 +232,17 @@ class Parser(BaseModel):
         )
         console.print(usage)
 
+        # Help help
+        text = ["--help (-H)", "Show this message and exit."]
+        table = Table(show_header=False, box=None)
+        table.add_row(*text)
+        panel = Panel(
+            table,
+            title=None,
+            border_style="bold yellow"
+        )
+        console.print(panel)
+
         # Arguments
         def get_help_panel(x: list[Argument | KeywordArgument | Subcommand], title: str | None) -> Panel:
             table = Table(show_header=False, box=None)

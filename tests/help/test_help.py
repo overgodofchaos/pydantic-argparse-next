@@ -43,6 +43,17 @@ def test_help_general():
     assert exc_info.value.code == 0
 
 
+def test_help_general_2(capsys):
+    class Test(BaseModel):
+        a: str = pa.KwArg(..., description="test")
+        b: str = pa.KwArg(None, description="test")
+
+    output = read_output(Test, ["--help"], capsys).out
+
+    assert "--help (-H)" in output
+    assert "Show this message and exit." in output
+
+
 def test_parserconfig(capsys):
     class Test(BaseModel):
         __parserconfig__ = pa.parserconfig(
